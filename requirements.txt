@@ -1,5 +1,5 @@
 streamlit
-openai>=1.50.0
+openai
 python-docx
 PyPDF2
 reportlab
