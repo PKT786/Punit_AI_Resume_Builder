@@ -1,5 +1,6 @@
 import streamlit as st
 
+
 from utils.docx_generator import create_docx
 
 from utils.pdf_generator import convert_docx_to_pdf
@@ -19,9 +20,16 @@ st.set_page_config(
 
 
 st.title(
-"📄 Download Resume"
+
+    "📄 Download Your Resume"
+
 )
 
+
+
+# ---------------------------------
+# Check Resume Exists
+# ---------------------------------
 
 
 if "resume_data" not in st.session_state:
@@ -29,7 +37,7 @@ if "resume_data" not in st.session_state:
 
     st.warning(
 
-    "Please generate resume first"
+        "Please generate resume first."
 
     )
 
@@ -41,20 +49,28 @@ if "resume_data" not in st.session_state:
 resume_data = st.session_state["resume_data"]
 
 
-template = st.session_state["template"]
+
+template = st.session_state.get(
+
+    "template",
+
+    "ATS Resume"
+
+)
 
 
 
 st.subheader(
 
-"Selected Template"
+    "Selected Template"
 
 )
+
 
 
 st.success(
 
-template
+    template
 
 )
 
@@ -62,22 +78,32 @@ template
 
 st.divider()
 
+
+
+# ---------------------------------
+# Preview
+# ---------------------------------
 
 
 st.subheader(
 
-"Resume Preview"
+    "Resume Preview"
 
 )
 
 
+
+resume_content = resume_data["summary"]
+
+
+
 st.text_area(
 
-"",
+    "Generated Resume",
 
-resume_data["summary"],
+    resume_content,
 
-height=400
+    height=450
 
 )
 
@@ -87,22 +113,26 @@ st.divider()
 
 
 
+# ---------------------------------
+# Generate Files
+# ---------------------------------
+
+
 if st.button(
 
-"Generate Files"
+    "⚙️ Create Download Files"
 
 ):
 
 
     with st.spinner(
 
-        "Creating professional files..."
+        "Preparing DOCX and PDF..."
 
     ):
 
 
-
-        # Create DOCX from template
+        # Create DOCX using template
 
 
         docx_file = create_docx(
@@ -115,12 +145,14 @@ if st.button(
 
 
 
-        # Convert same DOCX to PDF
+        # Create PDF
 
 
         pdf_file = convert_docx_to_pdf(
 
-            docx_file
+            docx_file,
+
+            resume_content
 
         )
 
@@ -128,22 +160,29 @@ if st.button(
 
         st.session_state["docx_file"] = docx_file
 
-
         st.session_state["pdf_file"] = pdf_file
 
 
 
     st.success(
 
-        "Files ready!"
+        "Files created successfully!"
 
     )
 
 
 
+st.divider()
+
+
+
+# ---------------------------------
+# Download Buttons
+# ---------------------------------
 
 
 if "docx_file" in st.session_state:
+
 
 
     col1,col2 = st.columns(2)
@@ -164,14 +203,16 @@ if "docx_file" in st.session_state:
 
             st.download_button(
 
-                "⬇ Download Word",
+                label="⬇ Download Word Resume",
 
-                file,
+                data=file,
 
-                file_name="AI_Resume.docx"
+                file_name="AI_Resume.docx",
+
+                mime=
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
             )
-
 
 
 
@@ -189,10 +230,12 @@ if "docx_file" in st.session_state:
 
             st.download_button(
 
-                "⬇ Download PDF",
+                label="⬇ Download PDF Resume",
 
-                file,
+                data=file,
 
-                file_name="AI_Resume.pdf"
+                file_name="AI_Resume.pdf",
+
+                mime="application/pdf"
 
             )
