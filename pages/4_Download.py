@@ -8,8 +8,13 @@ from utils.pdf_generator import create_pdf
 
 
 st.set_page_config(
+
     page_title="Download Resume",
+
+    page_icon="📄",
+
     layout="wide"
+
 )
 
 
@@ -24,77 +29,115 @@ if "resume" not in st.session_state:
 
 
     st.warning(
-    "Generate resume first"
+
+    "Please generate resume first"
+
     )
 
 
-else:
-
-
-    resume = st.session_state["resume"]
+    st.stop()
 
 
 
-    st.subheader(
-    "Resume Preview"
-    )
+resume = st.session_state["resume"]
 
 
-    st.text_area(
-        "",
-        resume,
-        height=400
-    )
 
+st.subheader(
+
+"Resume Preview"
+
+)
+
+
+
+st.text_area(
+
+"",
+
+resume,
+
+height=500
+
+)
+
+
+
+st.divider()
+
+
+
+with st.spinner(
+
+"Preparing files..."
+
+):
 
 
     docx_file = create_docx(
+
         resume
+
     )
 
 
     pdf_file = create_pdf(
+
         resume
+
     )
 
 
 
-    col1,col2 = st.columns(2)
+
+col1,col2 = st.columns(2)
 
 
 
-    with col1:
+with col1:
 
 
-        with open(docx_file,"rb") as f:
+    with open(
+        docx_file,
+        "rb"
+    ) as file:
 
 
-            st.download_button(
+        st.download_button(
 
-            "⬇ Download Word",
+            label="⬇ Download Word",
 
-            f,
+            data=file,
 
-            file_name=
-            "AI_Resume.docx"
+            file_name="AI_Resume.docx",
 
-            )
+            mime=
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
-
-
-    with col2:
+        )
 
 
-        with open(pdf_file,"rb") as f:
+
+with col2:
 
 
-            st.download_button(
+    with open(
 
-            "⬇ Download PDF",
+        pdf_file,
 
-            f,
+        "rb"
 
-            file_name=
-            "AI_Resume.pdf"
+    ) as file:
 
-            )
+
+        st.download_button(
+
+            label="⬇ Download PDF",
+
+            data=file,
+
+            file_name="AI_Resume.pdf",
+
+            mime="application/pdf"
+
+        )
