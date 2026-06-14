@@ -1,41 +1,69 @@
 import streamlit as st
 
 
-def show_resume_preview(resume):
+
+def show_resume_preview(resume_data):
 
 
     st.subheader(
-        "👁 Live Resume Preview"
+
+        "👁 Resume Preview"
+
     )
 
 
-    with st.container():
+
+    preview = f"""
+
+# {resume_data.get('name','Candidate Name')}
 
 
-        st.markdown(
-        f"""
-        <div style="
-        border:1px solid #ddd;
-        padding:30px;
-        border-radius:15px;
-        background:white;
-        ">
+## Professional Summary
+
+{resume_data.get('summary','')}
 
 
-        <h2>
-        AI Generated Resume
-        </h2>
+## Skills
+
+{resume_data.get('skills','')}
 
 
-        <hr>
+## Experience
+
+{resume_data.get('experience','')}
 
 
-        {resume.replace(chr(10),'<br>')}
+## Projects
+
+{resume_data.get('projects','')}
 
 
-        </div>
+## Education
 
-        """,
-        unsafe_allow_html=True
+{resume_data.get('education','')}
 
-        )
+"""
+
+
+
+    st.markdown(
+
+        preview
+
+    )
+
+
+
+    st.divider()
+
+
+
+    st.download_button(
+
+        label="📋 Copy Resume Text",
+
+        data=preview,
+
+        file_name="resume_preview.txt"
+
+    )
