@@ -1,15 +1,11 @@
 from docx import Document
-import os
 
 
 
-def create_docx(
-    resume_data,
-    template_name
-):
+def create_docx(resume_data, template_name):
 
 
-    template_map = {
+    templates = {
 
 
     "Modern Resume":
@@ -28,60 +24,55 @@ def create_docx(
 
 
 
-    template_file = template_map[
-        template_name
-    ]
-
-
-
     doc = Document(
-        template_file
+
+        templates[template_name]
+
     )
 
 
 
-    replacements = {
+    replace = {
 
 
     "{{NAME}}":
-    resume_data.get("name",""),
+    resume_data["name"],
 
 
     "{{SUMMARY}}":
-    resume_data.get("summary",""),
+    resume_data["summary"],
 
 
     "{{SKILLS}}":
-    resume_data.get("skills",""),
+    resume_data["skills"],
 
 
     "{{EXPERIENCE}}":
-    resume_data.get("experience",""),
+    resume_data["experience"],
 
 
     "{{PROJECTS}}":
-    resume_data.get("projects",""),
+    resume_data["projects"],
 
 
     "{{EDUCATION}}":
-    resume_data.get("education","")
+    resume_data["education"]
 
 
     }
 
 
 
-
-    for paragraph in doc.paragraphs:
-
-
-        for key,value in replacements.items():
+    for p in doc.paragraphs:
 
 
-            if key in paragraph.text:
+        for key,value in replace.items():
 
 
-                paragraph.text = paragraph.text.replace(
+            if key in p.text:
+
+
+                p.text = p.text.replace(
 
                     key,
 
@@ -91,7 +82,7 @@ def create_docx(
 
 
 
-    output = "Generated_AI_Resume.docx"
+    output="AI_Resume.docx"
 
 
 
