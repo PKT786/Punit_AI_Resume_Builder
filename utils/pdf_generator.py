@@ -1,43 +1,89 @@
-import subprocess
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer
+)
+
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import letter
 
 
 
-def convert_docx_to_pdf(docx_file):
+def convert_docx_to_pdf(
+    docx_file,
+    resume_text
+):
+
+    """
+    Creates PDF version of generated resume.
+
+    DOCX template is used for Word.
+    PDF is generated from resume content.
+    """
 
 
-    output_folder = "."
+
+    pdf_file = "AI_Resume.pdf"
 
 
-    subprocess.call(
 
-        [
+    pdf = SimpleDocTemplate(
 
-        "libreoffice",
+        pdf_file,
 
-        "--headless",
+        pagesize=letter
 
-        "--convert-to",
+    )
 
-        "pdf",
 
-        docx_file,
 
-        "--outdir",
+    styles = getSampleStyleSheet()
 
-        output_folder
 
-        ]
+
+    content = []
+
+
+
+    for line in resume_text.split("\n"):
+
+
+        if line.strip():
+
+
+            content.append(
+
+                Paragraph(
+
+                    line,
+
+                    styles["Normal"]
+
+                )
+
+            )
+
+
+            content.append(
+
+                Spacer(
+
+                    1,
+
+                    10
+
+                )
+
+            )
+
+
+
+    pdf.build(
+
+        content
 
     )
 
-
-    pdf_file = docx_file.replace(
-
-        ".docx",
-
-        ".pdf"
-
-    )
 
 
     return pdf_file
