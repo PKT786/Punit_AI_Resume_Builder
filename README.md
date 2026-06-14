@@ -1,2 +1,13 @@
-# Punit_AI_Resume_Builder
-To create ATS resume
+# AI Resume Builder
+
+AI-powered ATS resume generator.
+
+Features:
+
+- Resume Upload
+- AI Optimization
+- PDF Export
+- Word Export
+
+Built using:
+Python + Streamlit + OpenAI
