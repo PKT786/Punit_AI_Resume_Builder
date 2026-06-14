@@ -1,9 +1,8 @@
 import streamlit as st
 
-
 from utils.docx_generator import create_docx
 
-from utils.pdf_generator import create_pdf
+from utils.pdf_generator import convert_docx_to_pdf
 
 
 
@@ -20,12 +19,12 @@ st.set_page_config(
 
 
 st.title(
-"📄 Download Your Resume"
+"📄 Download Resume"
 )
 
 
 
-if "resume" not in st.session_state:
+if "resume_data" not in st.session_state:
 
 
     st.warning(
@@ -39,7 +38,29 @@ if "resume" not in st.session_state:
 
 
 
-resume = st.session_state["resume"]
+resume_data = st.session_state["resume_data"]
+
+
+template = st.session_state["template"]
+
+
+
+st.subheader(
+
+"Selected Template"
+
+)
+
+
+st.success(
+
+template
+
+)
+
+
+
+st.divider()
 
 
 
@@ -50,14 +71,13 @@ st.subheader(
 )
 
 
-
 st.text_area(
 
 "",
 
-resume,
+resume_data["summary"],
 
-height=500
+height=400
 
 )
 
@@ -67,77 +87,112 @@ st.divider()
 
 
 
-with st.spinner(
+if st.button(
 
-"Preparing files..."
+"Generate Files"
 
 ):
 
 
-    docx_file = create_docx(
+    with st.spinner(
 
-        resume
+        "Creating professional files..."
 
-    )
-
-
-    pdf_file = create_pdf(
-
-        resume
-
-    )
+    ):
 
 
 
-
-col1,col2 = st.columns(2)
-
+        # Create DOCX from template
 
 
-with col1:
+        docx_file = create_docx(
 
+            resume_data,
 
-    with open(
-        docx_file,
-        "rb"
-    ) as file:
-
-
-        st.download_button(
-
-            label="⬇ Download Word",
-
-            data=file,
-
-            file_name="AI_Resume.docx",
-
-            mime=
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            template
 
         )
 
 
 
-with col2:
+        # Convert same DOCX to PDF
 
 
-    with open(
+        pdf_file = convert_docx_to_pdf(
 
-        pdf_file,
-
-        "rb"
-
-    ) as file:
-
-
-        st.download_button(
-
-            label="⬇ Download PDF",
-
-            data=file,
-
-            file_name="AI_Resume.pdf",
-
-            mime="application/pdf"
+            docx_file
 
         )
+
+
+
+        st.session_state["docx_file"] = docx_file
+
+
+        st.session_state["pdf_file"] = pdf_file
+
+
+
+    st.success(
+
+        "Files ready!"
+
+    )
+
+
+
+
+
+if "docx_file" in st.session_state:
+
+
+    col1,col2 = st.columns(2)
+
+
+
+    with col1:
+
+
+        with open(
+
+            st.session_state["docx_file"],
+
+            "rb"
+
+        ) as file:
+
+
+            st.download_button(
+
+                "⬇ Download Word",
+
+                file,
+
+                file_name="AI_Resume.docx"
+
+            )
+
+
+
+
+    with col2:
+
+
+        with open(
+
+            st.session_state["pdf_file"],
+
+            "rb"
+
+        ) as file:
+
+
+            st.download_button(
+
+                "⬇ Download PDF",
+
+                file,
+
+                file_name="AI_Resume.pdf"
+
+            )
