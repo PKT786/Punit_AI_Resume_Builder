@@ -1,28 +1,39 @@
-def optimize_resume(text):
+from openai import OpenAI
+import streamlit as st
 
 
-    # Later connect OpenAI API here
+client = OpenAI(
+    api_key=st.secrets["OPENAI_API_KEY"]
+)
 
 
-    improved = f"""
+def optimize_resume(resume):
+
+    response = client.chat.completions.create(
+
+        model="gpt-4.1-mini",
+
+        messages=[
+
+            {
+                "role":"system",
+                "content":
+                """
+                You are an expert ATS resume writer.
+                Improve resumes professionally.
+                Add keywords.
+                Make experience achievement based.
+                """
+            },
+
+            {
+                "role":"user",
+                "content":resume
+            }
+
+        ]
+
+    )
 
 
-ATS Optimized Resume
-
-
-{text}
-
-
-AI Suggestions:
-
-✓ Added professional wording
-
-✓ Improved keywords
-
-✓ Better formatting
-
-
-"""
-
-
-    return improved
+    return response.choices[0].message.content
