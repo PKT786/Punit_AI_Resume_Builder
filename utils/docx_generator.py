@@ -3,54 +3,125 @@ import os
 
 
 
-def replace_text(doc, replacements):
+def replace_in_paragraph(paragraph, replacements):
 
 
-    for paragraph in doc.paragraphs:
+    full_text = ""
 
 
-        for key,value in replacements.items():
+    for run in paragraph.runs:
+
+        full_text += run.text
 
 
-            if key in paragraph.text:
+
+    updated = full_text
 
 
-                paragraph.text = paragraph.text.replace(
 
-                    key,
+    for key,value in replacements.items():
 
-                    value
+
+        if key in updated:
+
+
+            updated = updated.replace(
+
+                key,
+
+                value
+
+            )
+
+
+
+    if updated != full_text:
+
+
+        for run in paragraph.runs:
+
+            run.text = ""
+
+
+        if paragraph.runs:
+
+            paragraph.runs[0].text = updated
+
+
+
+def replace_in_table(table, replacements):
+
+
+    for row in table.rows:
+
+
+        for cell in row.cells:
+
+
+            for paragraph in cell.paragraphs:
+
+
+                replace_in_paragraph(
+
+                    paragraph,
+
+                    replacements
 
                 )
 
 
 
+def replace_all(doc, replacements):
+
+
+    # normal paragraphs
+
+    for paragraph in doc.paragraphs:
+
+
+        replace_in_paragraph(
+
+            paragraph,
+
+            replacements
+
+        )
+
+
+
+    # tables
+
     for table in doc.tables:
 
 
-        for row in table.rows:
+        replace_in_table(
+
+            table,
+
+            replacements
+
+        )
 
 
-            for cell in row.cells:
+
+    # headers
+
+    for section in doc.sections:
 
 
-                for paragraph in cell.paragraphs:
+        header = section.header
 
 
-                    for key,value in replacements.items():
+        for paragraph in header.paragraphs:
 
 
-                        if key in paragraph.text:
+            replace_in_paragraph(
 
+                paragraph,
 
-                            paragraph.text = paragraph.text.replace(
+                replacements
 
-                                key,
-
-                                value
-
-                            )
-
+            )
 
 
 
@@ -58,7 +129,7 @@ def create_docx(resume_data, template_name):
 
 
 
-    base_path = os.path.dirname(
+    base = os.path.dirname(
 
         os.path.dirname(
 
@@ -70,90 +141,56 @@ def create_docx(resume_data, template_name):
 
 
 
-    template_folder = os.path.join(
-
-        base_path,
-
-        "templates"
-
-    )
-
-
-
     templates = {
 
 
     "Modern Resume":
 
-    os.path.join(
-
-        template_folder,
-
-        "modern_resume.docx"
-
-    ),
+    "modern_resume.docx",
 
 
 
     "ATS Resume":
 
-    os.path.join(
-
-        template_folder,
-
-        "ats_resume.docx"
-
-    ),
+    "ats_resume.docx",
 
 
 
     "Developer Resume":
 
-    os.path.join(
-
-        template_folder,
-
-        "developer_resume.docx"
-
-    )
+    "developer_resume.docx"
 
 
     }
 
 
 
-    template_file = templates.get(
+    template_path = os.path.join(
 
-        template_name
+        base,
+
+        "templates",
+
+        templates[template_name]
 
     )
 
 
 
-    if not template_file or not os.path.exists(template_file):
+    if not os.path.exists(template_path):
 
 
-        raise FileNotFoundError(
+        raise Exception(
 
-        f"""
-
-Template missing:
-
-{template_file}
-
-
-Please upload DOCX files inside templates folder.
-
-"""
+            f"Template missing: {template_path}"
 
         )
 
 
 
-
     doc = Document(
 
-        template_file
+        template_path
 
     )
 
@@ -162,41 +199,80 @@ Please upload DOCX files inside templates folder.
     replacements = {
 
 
-    "{{NAME}}":
+        "{{NAME}}":
 
-    resume_data.get("name",""),
+        resume_data.get(
 
+            "name",
 
-    "{{SUMMARY}}":
+            ""
 
-    resume_data.get("summary",""),
-
-
-    "{{SKILLS}}":
-
-    resume_data.get("skills",""),
+        ),
 
 
-    "{{EXPERIENCE}}":
+        "{{SUMMARY}}":
 
-    resume_data.get("experience",""),
+        resume_data.get(
+
+            "summary",
+
+            ""
+
+        ),
 
 
-    "{{PROJECTS}}":
+        "{{SKILLS}}":
 
-    resume_data.get("projects",""),
+        resume_data.get(
+
+            "skills",
+
+            ""
+
+        ),
 
 
-    "{{EDUCATION}}":
 
-    resume_data.get("education","")
+        "{{EXPERIENCE}}":
+
+        resume_data.get(
+
+            "experience",
+
+            ""
+
+        ),
+
+
+
+        "{{PROJECTS}}":
+
+        resume_data.get(
+
+            "projects",
+
+            ""
+
+        ),
+
+
+
+        "{{EDUCATION}}":
+
+        resume_data.get(
+
+            "education",
+
+            ""
+
+        )
 
 
     }
 
 
 
-    replace_text(
+    replace_all(
 
         doc,
 
@@ -206,7 +282,7 @@ Please upload DOCX files inside templates folder.
 
 
 
-    output = "AI_Resume.docx"
+    output = "AI_Resume_Final.docx"
 
 
 
