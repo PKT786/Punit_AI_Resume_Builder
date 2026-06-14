@@ -1,30 +1,59 @@
 import streamlit as st
 
 from utils.resume_parser import extract_resume_text
-from ai.resume_optimizer import optimize_resume
+
+from ai.resume_optimizer import generate_resume_data
+
+from components.preview import show_resume_preview
+
 
 
 st.set_page_config(
+
     page_title="Upload Resume",
+
     page_icon="📤",
+
     layout="wide"
+
 )
 
 
-st.title("📤 Upload & Build AI Resume")
+
+# -----------------------------
+# Page Header
+# -----------------------------
+
+
+st.title(
+    "📤 Upload & Generate AI Resume"
+)
 
 
 st.write(
+
 """
-Upload your existing resume and create a premium ATS-friendly resume
-using professional templates.
+Upload your existing resume.
+
+AI will analyze it and create a professional ATS-friendly resume using your selected template.
 """
+
 )
+
+
+
+st.divider()
+
+
+
+# -----------------------------
+# Upload Resume
+# -----------------------------
 
 
 uploaded_file = st.file_uploader(
 
-    "Upload Resume",
+    "Upload Resume (PDF/DOCX)",
 
     type=[
         "pdf",
@@ -38,18 +67,26 @@ uploaded_file = st.file_uploader(
 if uploaded_file:
 
 
+
     st.success(
+
         f"Uploaded: {uploaded_file.name}"
+
     )
 
 
+
     with st.spinner(
-        "Extracting resume information..."
+
+        "Reading resume..."
+
     ):
 
 
         resume_text = extract_resume_text(
+
             uploaded_file
+
         )
 
 
@@ -59,13 +96,15 @@ if uploaded_file:
 
 
         st.subheader(
-            "Original Resume Content"
+
+            "📄 Extracted Resume"
+
         )
 
 
         st.text_area(
 
-            "Extracted Text",
+            "Resume Content",
 
             resume_text,
 
@@ -74,8 +113,14 @@ if uploaded_file:
         )
 
 
+
         st.divider()
 
+
+
+        # -----------------------------
+        # Template Selection
+        # -----------------------------
 
 
         template = st.selectbox(
@@ -100,6 +145,15 @@ if uploaded_file:
 
 
 
+        st.divider()
+
+
+
+        # -----------------------------
+        # Generate Resume
+        # -----------------------------
+
+
         if st.button(
 
             "🤖 Generate Premium Resume"
@@ -110,13 +164,13 @@ if uploaded_file:
 
             with st.spinner(
 
-                "AI is improving your resume..."
+                "AI is analyzing your resume..."
 
             ):
 
 
 
-                ai_resume = optimize_resume(
+                resume_data = generate_resume_data(
 
                     resume_text,
 
@@ -126,37 +180,10 @@ if uploaded_file:
 
 
 
-            # Store resume data
+            # Save structured data
 
 
-            st.session_state["resume_data"] = {
-
-
-                "name":
-                "Candidate Name",
-
-
-                "summary":
-                ai_resume,
-
-
-                "skills":
-                "Python | Excel | SQL | AI | Data Analysis",
-
-
-                "experience":
-                ai_resume,
-
-
-                "projects":
-                "AI Resume Builder Project",
-
-
-                "education":
-                "Education Details"
-
-            }
-
+            st.session_state["resume_data"] = resume_data
 
 
 
@@ -168,20 +195,16 @@ if uploaded_file:
 
 
 
-            st.subheader(
-
-                "Resume Preview"
-
-            )
+            st.divider()
 
 
-            st.text_area(
 
-                "",
+            # Preview
 
-                ai_resume,
 
-                height=500
+            show_resume_preview(
+
+                resume_data
 
             )
 
@@ -190,11 +213,27 @@ if uploaded_file:
             st.info(
 
             """
-            Next:
-            Go to Download page
-            and export PDF / Word
+
+Next:
+
+1. Check ATS Score
+
+2. Download Word/PDF Resume
+
             """
+
             )
+
+
+
+    else:
+
+
+        st.error(
+
+            "Could not extract resume text"
+
+        )
 
 
 
@@ -204,7 +243,14 @@ else:
     st.info(
 
     """
-    Please upload PDF or DOCX resume.
+
+Please upload your resume file.
+
+Supported:
+
+✔ PDF
+
+✔ DOCX
 
     """
 
