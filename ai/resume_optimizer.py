@@ -17,35 +17,31 @@ def generate_resume_data(resume_text, template):
             messages=[
 
                 {
+                    "role":"system",
 
-                "role":"system",
+                    "content":"""
 
-                "content":
-                f"""
+You are an expert ATS resume parser.
 
-You are an ATS resume expert.
+Read the resume and extract information.
 
-Analyze the resume and return ONLY JSON.
+Return ONLY valid JSON.
 
-Template:
-{template}
+Format:
 
-
-Return format:
-
-{{
+{
 "name":"",
 "summary":"",
 "skills":"",
 "experience":"",
 "projects":"",
 "education":""
-}}
+}
 
+Do not add markdown.
 Do not add explanation.
 
 """
-
                 },
 
 
@@ -57,15 +53,35 @@ Do not add explanation.
 
                 }
 
-            ]
+            ],
+
+            temperature=0
 
         )
 
 
-        result = response.choices[0].message.content
+
+        result=response.choices[0].message.content
 
 
-        return json.loads(result)
+
+        # remove markdown if AI adds it
+
+        result=result.replace(
+            "```json",
+            ""
+        ).replace(
+            "```",
+            ""
+        ).strip()
+
+
+
+        data=json.loads(result)
+
+
+
+        return data
 
 
 
@@ -73,7 +89,7 @@ Do not add explanation.
 
 
         st.warning(
-            "AI unavailable. Creating basic resume."
+            "AI extraction failed, using resume text fallback"
         )
 
 
@@ -82,24 +98,15 @@ Do not add explanation.
 
         "name":"Candidate Name",
 
-
         "summary":resume_text,
 
+        "skills":"",
 
-        "skills":
-        "Technical Skills",
+        "experience":"",
 
+        "projects":"",
 
-        "experience":
-        resume_text,
-
-
-        "projects":
-        "Project Details",
-
-
-        "education":
-        "Education Details"
+        "education":""
 
 
         }
