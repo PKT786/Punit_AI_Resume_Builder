@@ -1,4 +1,6 @@
 import streamlit as st
+import os
+
 
 from utils.resume_parser import extract_resume_text
 
@@ -8,11 +10,16 @@ from components.preview import show_resume_preview
 
 
 
+# -----------------------------
+# Page Configuration
+# -----------------------------
+
+
 st.set_page_config(
 
-    page_title="Upload Resume",
+    page_title="AI Resume Builder",
 
-    page_icon="📤",
+    page_icon="📄",
 
     layout="wide"
 
@@ -21,24 +28,167 @@ st.set_page_config(
 
 
 # -----------------------------
-# Page Header
+# Custom CSS
 # -----------------------------
 
 
-st.title(
-    "📤 Upload & Generate AI Resume"
+st.markdown(
+
+"""
+
+<style>
+
+
+.hero-title{
+
+font-size:45px;
+
+font-weight:800;
+
+color:#111827;
+
+}
+
+
+
+.hero-text{
+
+font-size:20px;
+
+color:#4b5563;
+
+}
+
+
+
+.stButton button{
+
+
+width:100%;
+
+height:50px;
+
+border-radius:12px;
+
+font-size:17px;
+
+font-weight:600;
+
+
+}
+
+
+</style>
+
+
+""",
+
+unsafe_allow_html=True
+
 )
 
 
-st.write(
 
-"""
-Upload your existing resume.
+# -----------------------------
+# Hero Section
+# -----------------------------
 
-AI will analyze it and create a professional ATS-friendly resume using your selected template.
-"""
 
+hero_image = "assets/resume_hero.png"
+
+
+
+hero_col1, hero_col2 = st.columns(
+    [1,1]
 )
+
+
+
+with hero_col1:
+
+
+    st.markdown(
+
+    """
+
+    <div class="hero-title">
+
+    📄 AI Resume Builder
+
+    </div>
+
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+
+    st.markdown(
+
+    """
+
+    <div class="hero-text">
+
+    Create ATS-friendly professional resumes using AI.
+
+
+    <br><br>
+
+
+    ✔ AI Resume Optimization
+
+    <br>
+
+    ✔ ATS Keyword Improvement
+
+    <br>
+
+    ✔ PDF & Word Export
+
+    <br>
+
+    ✔ Professional Templates
+
+
+    </div>
+
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+
+
+
+with hero_col2:
+
+
+    if os.path.exists(hero_image):
+
+
+        st.image(
+
+            hero_image,
+
+            use_container_width=True
+
+        )
+
+
+    else:
+
+
+        st.warning(
+
+            "Hero image not found. Add assets/resume_hero.png"
+
+        )
 
 
 
@@ -47,17 +197,26 @@ st.divider()
 
 
 # -----------------------------
-# Upload Resume
+# Upload Section
 # -----------------------------
+
+
+st.header(
+    "📤 Upload Your Resume"
+)
+
 
 
 uploaded_file = st.file_uploader(
 
-    "Upload Resume (PDF/DOCX)",
+    "Upload PDF or DOCX file",
 
     type=[
+
         "pdf",
+
         "docx"
+
     ]
 
 )
@@ -67,13 +226,14 @@ uploaded_file = st.file_uploader(
 if uploaded_file:
 
 
-
     st.success(
 
         f"Uploaded: {uploaded_file.name}"
 
     )
 
+
+    # Extract text
 
 
     with st.spinner(
@@ -97,14 +257,15 @@ if uploaded_file:
 
         st.subheader(
 
-            "📄 Extracted Resume"
+            "📄 Extracted Resume Content"
 
         )
 
 
+
         st.text_area(
 
-            "Resume Content",
+            "Resume Text",
 
             resume_text,
 
@@ -123,17 +284,26 @@ if uploaded_file:
         # -----------------------------
 
 
+
+        st.subheader(
+
+            "🎨 Select Resume Template"
+
+        )
+
+
+
         template = st.selectbox(
 
-            "Choose Resume Template",
+            "Choose Style",
 
             [
 
-            "Modern Resume",
+                "Modern Resume",
 
-            "ATS Resume",
+                "ATS Resume",
 
-            "Developer Resume"
+                "Developer Resume"
 
             ]
 
@@ -150,8 +320,9 @@ if uploaded_file:
 
 
         # -----------------------------
-        # Generate Resume
+        # Generate Button
         # -----------------------------
+
 
 
         if st.button(
@@ -180,7 +351,7 @@ if uploaded_file:
 
 
 
-            # Save structured data
+            # Save data
 
 
             st.session_state["resume_data"] = resume_data
@@ -214,11 +385,11 @@ if uploaded_file:
 
             """
 
-Next:
+            Next:
 
-1. Check ATS Score
+            Go to Download page
 
-2. Download Word/PDF Resume
+            Generate Word/PDF resume
 
             """
 
@@ -231,7 +402,7 @@ Next:
 
         st.error(
 
-            "Could not extract resume text"
+            "Unable to extract resume information"
 
         )
 
@@ -244,13 +415,14 @@ else:
 
     """
 
-Please upload your resume file.
+    Upload your resume to start.
 
-Supported:
+    Supported:
 
-✔ PDF
+    ✔ PDF
 
-✔ DOCX
+    ✔ DOCX
+
 
     """
 
