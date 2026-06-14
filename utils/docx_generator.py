@@ -1,36 +1,102 @@
 from docx import Document
+import os
 
 
 
-def create_docx(content):
+def create_docx(
+    resume_data,
+    template_name
+):
 
 
-    file_path = "AI_Resume.docx"
+    template_map = {
+
+
+    "Modern Resume":
+    "templates/modern_resume.docx",
+
+
+    "ATS Resume":
+    "templates/ats_resume.docx",
+
+
+    "Developer Resume":
+    "templates/developer_resume.docx"
+
+
+    }
 
 
 
-    doc = Document()
+    template_file = template_map[
+        template_name
+    ]
 
 
 
-    doc.add_heading(
-        "Professional Resume",
-        level=1
+    doc = Document(
+        template_file
     )
 
 
 
-    for line in content.split("\n"):
+    replacements = {
 
 
-        doc.add_paragraph(
-            line
-        )
+    "{{NAME}}":
+    resume_data.get("name",""),
+
+
+    "{{SUMMARY}}":
+    resume_data.get("summary",""),
+
+
+    "{{SKILLS}}":
+    resume_data.get("skills",""),
+
+
+    "{{EXPERIENCE}}":
+    resume_data.get("experience",""),
+
+
+    "{{PROJECTS}}":
+    resume_data.get("projects",""),
+
+
+    "{{EDUCATION}}":
+    resume_data.get("education","")
+
+
+    }
 
 
 
-    doc.save(file_path)
+
+    for paragraph in doc.paragraphs:
+
+
+        for key,value in replacements.items():
+
+
+            if key in paragraph.text:
+
+
+                paragraph.text = paragraph.text.replace(
+
+                    key,
+
+                    value
+
+                )
 
 
 
-    return file_path
+    output = "Generated_AI_Resume.docx"
+
+
+
+    doc.save(output)
+
+
+
+    return output
