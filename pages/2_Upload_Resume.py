@@ -1,5 +1,6 @@
 import streamlit as st
 
+
 from utils.resume_parser import extract_resume_text
 
 from ai.resume_optimizer import optimize_resume
@@ -18,107 +19,23 @@ st.set_page_config(
 
 
 
-# -----------------------------
-# Custom Styling
-# -----------------------------
-
-
-st.markdown(
-"""
-<style>
-
-
-.main-title{
-
-font-size:45px;
-
-font-weight:800;
-
-}
-
-
-
-.info-box{
-
-padding:20px;
-
-border-radius:15px;
-
-background:#f3f4f6;
-
-}
-
-
-.stButton button{
-
-
-width:100%;
-
-height:50px;
-
-border-radius:10px;
-
-font-size:18px;
-
-font-weight:600;
-
-
-}
-
-
-</style>
-
-""",
-
-unsafe_allow_html=True
-
+st.title(
+"📤 Upload & Optimize Resume"
 )
 
 
 
-# -----------------------------
-# Header
-# -----------------------------
-
-
-st.markdown(
-
+st.write(
 """
-
-<div class="main-title">
-
-📤 Upload & Optimize Resume
-
-</div>
-
-
-<p>
-
-Upload your existing resume and let AI transform it into an ATS-friendly professional resume.
-
-</p>
-
-
-""",
-
-unsafe_allow_html=True
-
+Upload your resume and generate a professional ATS-friendly version.
+"""
 )
 
-
-
-st.divider()
-
-
-
-# -----------------------------
-# Upload Section
-# -----------------------------
 
 
 uploaded_file = st.file_uploader(
 
-    "Upload your Resume (PDF / DOCX)",
+    "Upload PDF / DOCX",
 
     type=[
         "pdf",
@@ -132,27 +49,18 @@ uploaded_file = st.file_uploader(
 if uploaded_file:
 
 
-
     st.success(
-
-        f"Uploaded: {uploaded_file.name}"
-
+        uploaded_file.name
     )
 
 
-
-    # Extract text
-
-
     with st.spinner(
-        "Reading resume..."
+        "Extracting resume..."
     ):
 
 
         resume_text = extract_resume_text(
-
             uploaded_file
-
         )
 
 
@@ -160,20 +68,14 @@ if uploaded_file:
     if resume_text:
 
 
-        st.session_state["original_resume"] = resume_text
-
-
-
         st.subheader(
-
-            "📄 Resume Content"
-
+            "Original Resume"
         )
 
 
         st.text_area(
 
-            "Extracted Content",
+            "Extracted Text",
 
             resume_text,
 
@@ -187,48 +89,21 @@ if uploaded_file:
 
 
 
-        # -----------------------------
-        # Template Selection
-        # -----------------------------
-
-
-
-        st.subheader(
-
-            "🎨 Choose Resume Style"
-
-        )
-
-
         template = st.selectbox(
 
-            "Select Template",
+            "Choose Resume Template",
 
             [
 
-                "ATS Resume",
+            "ATS Resume",
 
-                "Modern Resume",
+            "Modern Resume",
 
-                "Developer Resume"
+            "Developer Resume"
 
             ]
 
         )
-
-
-
-        st.session_state["template"] = template
-
-
-
-        st.divider()
-
-
-
-        # -----------------------------
-        # Optimize Button
-        # -----------------------------
 
 
 
@@ -242,13 +117,13 @@ if uploaded_file:
 
             with st.spinner(
 
-                "AI is improving your resume..."
+                "Creating resume..."
 
             ):
 
 
 
-                optimized_resume = optimize_resume(
+                final_resume = optimize_resume(
 
                     resume_text,
 
@@ -258,7 +133,12 @@ if uploaded_file:
 
 
 
-            st.session_state["resume"] = optimized_resume
+            # Save only resume
+
+            st.session_state["resume"] = final_resume
+
+
+            st.session_state["template"] = template
 
 
 
@@ -270,13 +150,9 @@ if uploaded_file:
 
 
 
-            st.divider()
-
-
-
             st.subheader(
 
-                "✨ AI Generated Resume Preview"
+                "Resume Preview"
 
             )
 
@@ -284,9 +160,9 @@ if uploaded_file:
 
             st.text_area(
 
-                "Final Resume",
+                "",
 
-                optimized_resume,
+                final_resume,
 
                 height=500
 
@@ -294,20 +170,45 @@ if uploaded_file:
 
 
 
-            st.info(
+            st.divider()
 
-            """
 
-Next Steps:
 
-1. Check ATS Score
+            col1,col2 = st.columns(2)
 
-2. Download PDF/DOCX
 
-            """
 
-            )
+            with col1:
 
+
+                if st.button(
+                    "📊 ATS Analysis"
+                ):
+
+
+                    st.switch_page(
+
+                    "pages/3_ATS_Analysis.py"
+
+                    )
+
+
+
+            with col2:
+
+
+                if st.button(
+
+                    "⬇ Download Resume"
+
+                ):
+
+
+                    st.switch_page(
+
+                    "pages/4_Download.py"
+
+                    )
 
 
     else:
@@ -315,7 +216,7 @@ Next Steps:
 
         st.error(
 
-            "Unable to extract resume content."
+        "Unable to read resume"
 
         )
 
@@ -327,66 +228,12 @@ else:
     st.info(
 
     """
+    Please upload resume file.
 
-Please upload your resume file.
-
-Supported:
-
-✔ PDF
-
-✔ DOCX
+    Supported:
+    PDF
+    DOCX
 
     """
 
     )
-
-
-
-# -----------------------------
-# Navigation
-# -----------------------------
-
-
-if "resume" in st.session_state:
-
-
-    st.divider()
-
-
-    col1,col2 = st.columns(2)
-
-
-
-    with col1:
-
-
-        if st.button(
-
-            "📊 Check ATS Score"
-
-        ):
-
-
-            st.switch_page(
-
-            "pages/3_ATS_Analysis.py"
-
-            )
-
-
-
-    with col2:
-
-
-        if st.button(
-
-            "⬇ Download Resume"
-
-        ):
-
-
-            st.switch_page(
-
-            "pages/4_Download.py"
-
-            )
