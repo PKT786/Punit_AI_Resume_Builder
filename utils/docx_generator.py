@@ -1,11 +1,10 @@
 from docx import Document
+import os
 
 
 
 def replace_text(doc, replacements):
 
-
-    # paragraphs
 
     for paragraph in doc.paragraphs:
 
@@ -25,8 +24,6 @@ def replace_text(doc, replacements):
                 )
 
 
-
-    # tables
 
     for table in doc.tables:
 
@@ -60,57 +57,138 @@ def replace_text(doc, replacements):
 def create_docx(resume_data, template_name):
 
 
-    templates={
+
+    base_path = os.path.dirname(
+
+        os.path.dirname(
+
+            os.path.abspath(__file__)
+
+        )
+
+    )
+
+
+
+    template_folder = os.path.join(
+
+        base_path,
+
+        "templates"
+
+    )
+
+
+
+    templates = {
 
 
     "Modern Resume":
-    "templates/modern_resume.docx",
+
+    os.path.join(
+
+        template_folder,
+
+        "modern_resume.docx"
+
+    ),
+
 
 
     "ATS Resume":
-    "templates/ats_resume.docx",
+
+    os.path.join(
+
+        template_folder,
+
+        "ats_resume.docx"
+
+    ),
+
 
 
     "Developer Resume":
-    "templates/developer_resume.docx"
+
+    os.path.join(
+
+        template_folder,
+
+        "developer_resume.docx"
+
+    )
 
 
     }
 
 
 
-    doc=Document(
+    template_file = templates.get(
 
-        templates[template_name]
+        template_name
 
     )
 
 
 
-    replacements={
+    if not template_file or not os.path.exists(template_file):
+
+
+        raise FileNotFoundError(
+
+        f"""
+
+Template missing:
+
+{template_file}
+
+
+Please upload DOCX files inside templates folder.
+
+"""
+
+        )
+
+
+
+
+    doc = Document(
+
+        template_file
+
+    )
+
+
+
+    replacements = {
 
 
     "{{NAME}}":
+
     resume_data.get("name",""),
 
 
     "{{SUMMARY}}":
+
     resume_data.get("summary",""),
 
 
     "{{SKILLS}}":
+
     resume_data.get("skills",""),
 
 
     "{{EXPERIENCE}}":
+
     resume_data.get("experience",""),
 
 
     "{{PROJECTS}}":
+
     resume_data.get("projects",""),
 
 
     "{{EDUCATION}}":
+
     resume_data.get("education","")
 
 
@@ -128,7 +206,7 @@ def create_docx(resume_data, template_name):
 
 
 
-    output="AI_Resume.docx"
+    output = "AI_Resume.docx"
 
 
 
