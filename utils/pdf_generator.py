@@ -1,56 +1,43 @@
-from reportlab.platypus import (
-    SimpleDocTemplate,
-    Paragraph,
-    Spacer
-)
-
-from reportlab.lib.styles import getSampleStyleSheet
+import subprocess
 
 
 
-def create_pdf(content):
+def convert_docx_to_pdf(docx_file):
 
 
-    file_path = "AI_Resume.pdf"
+    output_folder = "."
 
 
+    subprocess.call(
 
-    doc = SimpleDocTemplate(
-        file_path
+        [
+
+        "libreoffice",
+
+        "--headless",
+
+        "--convert-to",
+
+        "pdf",
+
+        docx_file,
+
+        "--outdir",
+
+        output_folder
+
+        ]
+
     )
 
 
-    styles = getSampleStyleSheet()
+    pdf_file = docx_file.replace(
 
+        ".docx",
 
+        ".pdf"
 
-    story=[]
-
-
-
-    for line in content.split("\n"):
-
-
-        story.append(
-
-            Paragraph(
-            line,
-            styles["Normal"]
-            )
-
-        )
-
-
-        story.append(
-            Spacer(1,12)
-        )
-
-
-
-    doc.build(
-        story
     )
 
 
-
-    return file_path
+    return pdf_file
