@@ -1,13 +1,13 @@
 from ai.openai_client import get_openai_client
+import streamlit as st
 
 
+
+# ---------------------------------
+# Template Resume Generator
+# ---------------------------------
 
 def template_resume(resume_text, template):
-
-    """
-    Fallback ATS resume generator
-    Works even when OpenAI is unavailable
-    """
 
 
     if template == "Modern Resume":
@@ -15,37 +15,42 @@ def template_resume(resume_text, template):
 
         return f"""
 
-================================
-
 PROFESSIONAL RESUME
 
 
-SUMMARY
+PROFESSIONAL SUMMARY
+
 
 {resume_text}
 
 
 
-SKILLS
+KEY SKILLS
+
 
 • Technical Skills
+
 • Problem Solving
+
 • Communication
+
 • Team Collaboration
 
 
 
-EXPERIENCE
+PROFESSIONAL EXPERIENCE
 
-• Responsible for delivering quality solutions
 
-• Worked on business requirements
+• Delivered business solutions
+
+• Worked on technical requirements
 
 • Improved process efficiency
 
 
 
 PROJECTS
+
 
 Project Name:
 
@@ -57,12 +62,11 @@ Technology Used:
 
 EDUCATION
 
-Add education details
 
-
-================================
+Add Education Details
 
 """
+
 
 
     elif template == "Developer Resume":
@@ -74,7 +78,8 @@ Add education details
 SOFTWARE DEVELOPER RESUME
 
 
-PROFESSIONAL SUMMARY
+
+SUMMARY
 
 
 {resume_text}
@@ -85,33 +90,43 @@ TECHNICAL SKILLS
 
 
 Programming:
-
 Python | SQL | Java
 
 
 Tools:
-
-Git | VS Code | Cloud
-
-
-
-PROJECT EXPERIENCE
-
-
-• Developed applications
-
-• Created solutions using technology
-
-• Debugged and improved systems
+Git | Cloud | VS Code
 
 
 
-GITHUB:
+EXPERIENCE
 
-Portfolio:
 
+• Developed software solutions
+
+• Fixed technical issues
+
+• Improved application performance
+
+
+
+PROJECTS
+
+
+Project Name:
+
+Technology Stack:
+
+Description:
+
+
+
+EDUCATION
+
+
+Add Education Details
 
 """
+
 
 
     else:
@@ -121,6 +136,7 @@ Portfolio:
 
 
 ATS FRIENDLY RESUME
+
 
 
 PROFESSIONAL SUMMARY
@@ -133,42 +149,53 @@ PROFESSIONAL SUMMARY
 CORE SKILLS
 
 
-• Add relevant keywords
+• Technical Skills
 
-• Add technical skills
+• Industry Knowledge
 
-• Add domain expertise
+• Tools & Technologies
 
 
 
 WORK EXPERIENCE
 
 
-• Achievement based bullet points
+• Created business impact
 
-• Add measurable results
+• Improved workflows
+
+• Delivered projects
+
 
 
 PROJECTS
 
 
-Project Name
+Project Name:
 
-Description
+Description:
+
 
 
 EDUCATION
 
 
+Add Education Details
+
 """
 
 
+
+
 # ---------------------------------
-# OpenAI Optimizer
+# AI Resume Optimizer
 # ---------------------------------
 
 
-def optimize_resume(resume_text, template="ATS Resume"):
+def optimize_resume(
+        resume_text,
+        template="ATS Resume"
+):
 
 
     try:
@@ -189,28 +216,28 @@ def optimize_resume(resume_text, template="ATS Resume"):
 
                 {
 
-
                 "role":"system",
-
 
                 "content":
 
                 f"""
 
-You are an expert ATS resume writer.
+You are a professional ATS resume writer.
 
 Create a premium {template}.
 
+
 Rules:
 
-- Use professional language
+- Improve professional wording
 - Add ATS keywords
-- Improve experience bullets
-- Add achievements
-- Improve formatting
+- Convert tasks into achievements
+- Use bullet points
 - Do not create fake experience
 
-Make it recruiter ready.
+Output only resume content.
+
+No explanation.
 
 """
 
@@ -219,12 +246,9 @@ Make it recruiter ready.
 
                 {
 
-
                 "role":"user",
 
-
                 "content":resume_text
-
 
                 }
 
@@ -233,7 +257,6 @@ Make it recruiter ready.
 
 
             temperature=0.3
-
 
         )
 
@@ -247,53 +270,43 @@ Make it recruiter ready.
 
 
 
-        error_message = str(e)
+        error=str(e)
 
 
 
-        # --------------------------
-        # API quota error handling
-        # --------------------------
+        if "insufficient_quota" in error:
 
 
-        if "insufficient_quota" in error_message:
+            st.warning(
+            """
+            ⚠️ AI Optimization unavailable.
 
+            OpenAI API quota limit reached.
 
-            return f"""
+            Creating resume using selected template.
+            """
+            )
 
-⚠️ AI Optimization temporarily unavailable.
-
-Reason:
-OpenAI API quota limit reached.
-
-Generating ATS Resume using
-{template} template.
-
-----------------------------
-
-
-{template_resume(
-    resume_text,
-    template
-)}
-
-
-"""
 
 
         else:
 
 
-            return f"""
+            st.warning(
+            """
+            ⚠️ AI service unavailable.
 
-⚠️ AI service error.
+            Creating resume using selected template.
+            """
+            )
 
-Generating standard ATS resume.
 
 
-{template_resume(
-    resume_text,
-    template
-)}
+        # ONLY RETURN RESUME
+        return template_resume(
 
-"""
+            resume_text,
+
+            template
+
+        )
