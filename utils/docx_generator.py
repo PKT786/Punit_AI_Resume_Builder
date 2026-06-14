@@ -2,10 +2,65 @@ from docx import Document
 
 
 
+def replace_text(doc, replacements):
+
+
+    # paragraphs
+
+    for paragraph in doc.paragraphs:
+
+
+        for key,value in replacements.items():
+
+
+            if key in paragraph.text:
+
+
+                paragraph.text = paragraph.text.replace(
+
+                    key,
+
+                    value
+
+                )
+
+
+
+    # tables
+
+    for table in doc.tables:
+
+
+        for row in table.rows:
+
+
+            for cell in row.cells:
+
+
+                for paragraph in cell.paragraphs:
+
+
+                    for key,value in replacements.items():
+
+
+                        if key in paragraph.text:
+
+
+                            paragraph.text = paragraph.text.replace(
+
+                                key,
+
+                                value
+
+                            )
+
+
+
+
 def create_docx(resume_data, template_name):
 
 
-    templates = {
+    templates={
 
 
     "Modern Resume":
@@ -24,7 +79,7 @@ def create_docx(resume_data, template_name):
 
 
 
-    doc = Document(
+    doc=Document(
 
         templates[template_name]
 
@@ -32,53 +87,44 @@ def create_docx(resume_data, template_name):
 
 
 
-    replace = {
+    replacements={
 
 
     "{{NAME}}":
-    resume_data["name"],
+    resume_data.get("name",""),
 
 
     "{{SUMMARY}}":
-    resume_data["summary"],
+    resume_data.get("summary",""),
 
 
     "{{SKILLS}}":
-    resume_data["skills"],
+    resume_data.get("skills",""),
 
 
     "{{EXPERIENCE}}":
-    resume_data["experience"],
+    resume_data.get("experience",""),
 
 
     "{{PROJECTS}}":
-    resume_data["projects"],
+    resume_data.get("projects",""),
 
 
     "{{EDUCATION}}":
-    resume_data["education"]
+    resume_data.get("education","")
 
 
     }
 
 
 
-    for p in doc.paragraphs:
+    replace_text(
 
+        doc,
 
-        for key,value in replace.items():
+        replacements
 
-
-            if key in p.text:
-
-
-                p.text = p.text.replace(
-
-                    key,
-
-                    value
-
-                )
+    )
 
 
 
