@@ -1,7 +1,5 @@
 streamlit
-openai
+openai>=1.50.0
 python-docx
 PyPDF2
 reportlab
-pandas
-python-multipart
