@@ -93,15 +93,50 @@ def create_docx(template_name, resume_data):
 
 
 
-        "{{NAME}}":
+       replacements={
 
-        resume_data.get(
 
-            "name",
+"{{NAME}}":
 
-            ""
+resume_data.get("name",""),
 
-        ),
+
+"{{EMAIL}}":
+
+resume_data.get("email",""),
+
+
+"{{PHONE}}":
+
+resume_data.get("phone",""),
+
+
+"{{JOB_TITLE}}":
+
+resume_data.get("job_title",""),
+
+
+"{{SUMMARY}}":
+
+resume_data.get("summary",""),
+
+
+"{{SKILLS}}":
+
+resume_data.get("skills",""),
+
+
+"{{EXPERIENCE}}":
+
+resume_data.get("experience",""),
+
+
+"{{EDUCATION}}":
+
+resume_data.get("education","")
+
+
+},
 
 
 
