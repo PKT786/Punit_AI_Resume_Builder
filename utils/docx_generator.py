@@ -1,77 +1,160 @@
 from docx import Document
-
 import os
 
 
 
-def replace_text(document, replacements):
+# -------------------------------------------------
+# Replace text inside paragraph runs
+# -------------------------------------------------
+
+def replace_in_paragraph(paragraph, replacements):
 
 
-    # Paragraphs
+    for run in paragraph.runs:
 
 
-    for paragraph in document.paragraphs:
+        for key, value in replacements.items():
 
 
-        for key,value in replacements.items():
+            if key in run.text:
 
 
-            if key in paragraph.text:
-
-
-                paragraph.text = paragraph.text.replace(
+                run.text = run.text.replace(
 
                     key,
 
-                    value
+                    str(value)
 
                 )
+
+
+
+# -------------------------------------------------
+# Replace text inside tables
+# -------------------------------------------------
+
+def replace_in_table(table, replacements):
+
+
+    for row in table.rows:
+
+
+        for cell in row.cells:
+
+
+            for paragraph in cell.paragraphs:
+
+
+                replace_in_paragraph(
+
+                    paragraph,
+
+                    replacements
+
+                )
+
+
+
+# -------------------------------------------------
+# Replace headers and footers
+# -------------------------------------------------
+
+def replace_headers_footers(doc, replacements):
+
+
+    for section in doc.sections:
+
+
+        # Header
+
+        for paragraph in section.header.paragraphs:
+
+
+            replace_in_paragraph(
+
+                paragraph,
+
+                replacements
+
+            )
+
+
+
+        # Footer
+
+        for paragraph in section.footer.paragraphs:
+
+
+            replace_in_paragraph(
+
+                paragraph,
+
+                replacements
+
+            )
+
+
+
+# -------------------------------------------------
+# Main replacement function
+# -------------------------------------------------
+
+def replace_placeholders(doc, replacements):
+
+
+    # Normal paragraphs
+
+
+    for paragraph in doc.paragraphs:
+
+
+        replace_in_paragraph(
+
+            paragraph,
+
+            replacements
+
+        )
 
 
 
     # Tables
 
 
-    for table in document.tables:
+    for table in doc.tables:
 
 
-        for row in table.rows:
+        replace_in_table(
 
+            table,
 
-            for cell in row.cells:
+            replacements
 
-
-                for paragraph in cell.paragraphs:
-
-
-                    for key,value in replacements.items():
-
-
-                        if key in paragraph.text:
-
-
-                            paragraph.text = paragraph.text.replace(
-
-                                key,
-
-                                value
-
-                            )
+        )
 
 
 
+    # Header Footer
 
+
+    replace_headers_footers(
+
+        doc,
+
+        replacements
+
+    )
+
+
+
+# -------------------------------------------------
+# Create Resume DOCX
+# -------------------------------------------------
 
 def create_docx(template_name, resume_data):
 
 
-    base = os.getcwd()
-
-
-
     template_path = os.path.join(
-
-        base,
 
         "templates",
 
@@ -79,6 +162,20 @@ def create_docx(template_name, resume_data):
 
     )
 
+
+
+    if not os.path.exists(template_path):
+
+
+        raise FileNotFoundError(
+
+            f"Template not found: {template_path}"
+
+        )
+
+
+
+    # Open template
 
 
     doc = Document(
@@ -89,54 +186,22 @@ def create_docx(template_name, resume_data):
 
 
 
+    # Data mapping
+
+
     replacements = {
 
 
 
-       replacements={
+        "{{NAME}}":
 
+        resume_data.get(
 
-"{{NAME}}":
+            "name",
 
-resume_data.get("name",""),
+            ""
 
-
-"{{EMAIL}}":
-
-resume_data.get("email",""),
-
-
-"{{PHONE}}":
-
-resume_data.get("phone",""),
-
-
-"{{JOB_TITLE}}":
-
-resume_data.get("job_title",""),
-
-
-"{{SUMMARY}}":
-
-resume_data.get("summary",""),
-
-
-"{{SKILLS}}":
-
-resume_data.get("skills",""),
-
-
-"{{EXPERIENCE}}":
-
-resume_data.get("experience",""),
-
-
-"{{EDUCATION}}":
-
-resume_data.get("education","")
-
-
-},
+        ),
 
 
 
@@ -169,6 +234,42 @@ resume_data.get("education","")
         resume_data.get(
 
             "phone",
+
+            ""
+
+        ),
+
+
+
+        "{{LOCATION}}":
+
+        resume_data.get(
+
+            "location",
+
+            ""
+
+        ),
+
+
+
+        "{{LINKEDIN}}":
+
+        resume_data.get(
+
+            "linkedin",
+
+            ""
+
+        ),
+
+
+
+        "{{GITHUB}}":
+
+        resume_data.get(
+
+            "github",
 
             ""
 
@@ -222,13 +323,14 @@ resume_data.get("education","")
 
         )
 
-
-
     }
 
 
 
-    replace_text(
+    # Replace values
+
+
+    replace_placeholders(
 
         doc,
 
@@ -238,12 +340,19 @@ resume_data.get("education","")
 
 
 
-    output = "Generated_Resume.docx"
+    # Output file
+
+
+    output_file = "Generated_Resume.docx"
 
 
 
-    doc.save(output)
+    doc.save(
+
+        output_file
+
+    )
 
 
 
-    return output
+    return output_file
