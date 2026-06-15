@@ -1,5 +1,6 @@
-streamlit
-openai
 python-docx
 PyPDF2
-reportlab
+docx2pdf
+openai
+streamlit
+pandas
