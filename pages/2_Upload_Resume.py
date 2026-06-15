@@ -2,6 +2,7 @@ import streamlit as st
 
 from utils.resume_parser import extract_resume
 from utils.ats_checker import calculate_ats_score
+from utils.resume_extractor import extract_resume_details
 
 from ai.resume_optimizer import optimize_resume
 
@@ -185,31 +186,11 @@ if uploaded_file:
     # -------------------------
 
 
-    resume_data = {
+    resume_data = extract_resume_details(
 
+    resume_text
 
-        "name":"",
-
-        "job_title":"",
-
-        "email":"",
-
-        "phone":"",
-
-        "summary":resume_text[:500],
-
-
-        "skills":"",
-
-        "experience":resume_text,
-
-
-        "education":""
-
-
-
-    }
-
+)
 
 
     # -------------------------
