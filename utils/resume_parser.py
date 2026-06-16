@@ -1,5 +1,5 @@
-import re
 from docx import Document
+import re
 
 
 
@@ -14,7 +14,7 @@ def extract_resume_text(file):
 
         if p.text.strip():
 
-            text.append(p.text)
+            text.append(p.text.strip())
 
 
 
@@ -22,10 +22,17 @@ def extract_resume_text(file):
 
         for row in table.rows:
 
-            for cell in row.cells:
+            text.append(
 
-                text.append(cell.text)
+                " ".join(
 
+                    c.text.strip()
+
+                    for c in row.cells
+
+                )
+
+            )
 
 
     return "\n".join(text)
@@ -34,22 +41,16 @@ def extract_resume_text(file):
 
 
 
-def find_section(text, title, next_sections):
+
+def section_extract(text, headings):
 
 
-    pattern = (
-        title +
-        r"(.*?)(?="
-        +
-        "|".join(next_sections)
-        +
-        "|$)"
-    )
+    pattern="|".join(headings)
 
 
     match=re.search(
 
-        pattern,
+        rf"({pattern})(.*?)(?=\n[A-Z][A-Z\s]+$|$)",
 
         text,
 
@@ -60,10 +61,11 @@ def find_section(text, title, next_sections):
 
     if match:
 
-        return match.group(1).strip()
+        return match.group(2).strip()
 
 
     return ""
+
 
 
 
@@ -75,6 +77,7 @@ def parse_resume(text):
 
 
     data={}
+
 
 
 
@@ -90,14 +93,15 @@ def parse_resume(text):
 
 
 
-    # NAME
-
-    data["name"]=lines[0] if lines else ""
+    # Name
 
 
+    data["name"]=lines[0]
 
 
-    # EMAIL
+
+    # Email
+
 
     email=re.findall(
 
@@ -113,7 +117,9 @@ def parse_resume(text):
 
 
 
-    # PHONE
+
+    # Phone
+
 
     phone=re.findall(
 
@@ -130,72 +136,22 @@ def parse_resume(text):
 
 
 
-    # LINKS
-
-    data["linkedin"]=""
-
-    data["github"]=""
 
 
+    # Summary
 
 
-
-    # SKILLS
-
-    skill_section=find_section(
+    summary=section_extract(
 
         text,
-
-        "SKILLS",
 
         [
-
-        "EXPERIENCE",
-
-        "EDUCATION",
-
-        "PROJECTS"
-
-        ]
-
-    )
-
-
-    data["skills"]=[
-
-        x.strip()
-
-        for x in skill_section.replace(
-
-            ",",
-
-            "\n"
-
-        ).split("\n")
-
-        if x.strip()
-
-    ]
-
-
-
-
-
-
-
-    # SUMMARY
-
-    summary=find_section(
-
-        text,
 
         "SUMMARY",
 
-        [
+        "PROFESSIONAL SUMMARY",
 
-        "SKILLS",
-
-        "EXPERIENCE"
+        "PROFILE"
 
         ]
 
@@ -208,20 +164,67 @@ def parse_resume(text):
 
 
 
-    # EDUCATION
 
 
-    edu=find_section(
+    # Skills
+
+
+    skills=section_extract(
 
         text,
 
-        "EDUCATION",
+        [
+
+        "SKILLS",
+
+        "TECHNICAL SKILLS",
+
+        "CORE SKILLS"
+
+        ]
+
+    )
+
+
+    data["skills"]=[
+
+        s.strip()
+
+        for s in re.split(
+
+            ",|\n|\|",
+
+            skills
+
+        )
+
+        if s.strip()
+
+    ]
+
+
+
+
+
+
+
+
+    # Experience
+
+
+    exp=section_extract(
+
+        text,
 
         [
 
         "EXPERIENCE",
 
-        "PROJECTS"
+        "PROFESSIONAL EXPERIENCE",
+
+        "WORK EXPERIENCE",
+
+        "EMPLOYMENT"
 
         ]
 
@@ -229,15 +232,108 @@ def parse_resume(text):
 
 
 
-    edu_lines=[
+    exp_lines=[
 
         x.strip()
 
-        for x in edu.split("\n")
+        for x in exp.split("\n")
 
         if x.strip()
 
     ]
+
+
+
+    bullets=[]
+
+
+    for line in exp_lines:
+
+
+        if (
+
+            line.startswith("•")
+
+            or
+
+            line.startswith("-")
+
+        ):
+
+            bullets.append(
+
+                line.replace(
+
+                    "•",""
+
+                ).replace(
+
+                    "-",""
+
+                ).strip()
+
+            )
+
+
+
+
+
+    data["experience"]=[
+
+        {
+
+        "role":exp_lines[0] if exp_lines else "",
+
+
+        "company":exp_lines[1] if len(exp_lines)>1 else "",
+
+
+        "location":"",
+
+
+        "dates":"",
+
+
+        "bullet1":bullets[0] if len(bullets)>0 else "",
+
+
+        "bullet2":bullets[1] if len(bullets)>1 else "",
+
+
+        "bullet3":bullets[2] if len(bullets)>2 else ""
+
+        }
+
+    ]
+
+
+
+
+
+
+
+
+    # Education
+
+
+    edu=section_extract(
+
+        text,
+
+        [
+
+        "EDUCATION",
+
+        "ACADEMIC QUALIFICATION"
+
+        ]
+
+    )
+
+
+
+    edu_lines=edu.split("\n")
+
 
 
     data["education"]=[
@@ -246,7 +342,7 @@ def parse_resume(text):
 
         "degree":
 
-        edu_lines[0] if len(edu_lines)>0 else "",
+        edu_lines[0] if edu_lines else "",
 
 
         "university":
@@ -268,126 +364,23 @@ def parse_resume(text):
 
 
 
-    # EXPERIENCE
+    # Projects
 
 
-    exp=find_section(
+    projects=section_extract(
 
         text,
 
-        "EXPERIENCE",
-
         [
-
-        "EDUCATION",
 
         "PROJECTS",
 
-        "CERTIFICATIONS"
+        "PROJECT"
 
         ]
 
     )
 
-
-    exp_lines=[
-
-        x.strip()
-
-        for x in exp.split("\n")
-
-        if x.strip()
-
-    ]
-
-
-
-    bullets=[
-
-        x.replace(
-
-            "•",
-
-            ""
-
-        ).replace(
-
-            "-",
-
-            ""
-
-        )
-
-        for x in exp_lines
-
-        if x.startswith(("•","-"))
-
-    ]
-
-
-
-    data["experience"]=[
-
-        {
-
-        "role":
-
-        exp_lines[0] if len(exp_lines)>0 else "",
-
-
-        "company":
-
-        exp_lines[1] if len(exp_lines)>1 else "",
-
-
-        "location":"",
-
-
-        "dates":"",
-
-
-        "bullet1":
-
-        bullets[0] if len(bullets)>0 else "",
-
-
-        "bullet2":
-
-        bullets[1] if len(bullets)>1 else "",
-
-
-        "bullet3":
-
-        bullets[2] if len(bullets)>2 else ""
-
-        }
-
-    ]
-
-
-
-
-
-
-
-    # PROJECTS
-
-
-    projects=find_section(
-
-        text,
-
-        "PROJECTS",
-
-        [
-
-        "CERTIFICATION",
-
-        "SKILLS"
-
-        ]
-
-    )
 
 
     data["projects"]=[
@@ -396,13 +389,10 @@ def parse_resume(text):
 
         "name":
 
-        projects.split("\n")[0]
-        if projects else "",
+        projects.split("\n")[0] if projects else "",
 
 
-        "description":
-
-        projects,
+        "description":projects,
 
 
         "link":""
@@ -416,18 +406,18 @@ def parse_resume(text):
 
 
 
-    # CERTIFICATIONS
+    # Certifications
 
 
-    cert=find_section(
+    cert=section_extract(
 
         text,
 
-        "CERTIFICATION",
-
         [
 
-        "PROJECT"
+        "CERTIFICATION",
+
+        "CERTIFICATIONS"
 
         ]
 
@@ -439,18 +429,20 @@ def parse_resume(text):
 
 
 
-    # ACHIEVEMENTS
 
 
-    ach=find_section(
+    # Achievements
+
+
+    ach=section_extract(
 
         text,
 
-        "ACHIEVEMENTS",
-
         [
 
-        "PROJECT"
+        "ACHIEVEMENTS",
+
+        "ACCOMPLISHMENTS"
 
         ]
 
@@ -458,6 +450,8 @@ def parse_resume(text):
 
 
     data["achievements"]=ach.split("\n") if ach else []
+
+
 
 
 
