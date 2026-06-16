@@ -4,431 +4,203 @@ import tempfile
 
 
 
-# -------------------------------------------------
-# Replace text inside paragraph
-# Handles Word split placeholders
-# -------------------------------------------------
-
-def replace_text_in_paragraph(paragraph, replacements):
-
+def replace_paragraph(paragraph, mapping):
 
     full_text = ""
 
-
     for run in paragraph.runs:
-
         full_text += run.text
 
 
-
-    updated_text = full_text
-
+    updated = full_text
 
 
-    for key,value in replacements.items():
-
+    for key,value in mapping.items():
 
         if value is None:
-
             value = ""
 
-
-        updated_text = updated_text.replace(
-
+        updated = updated.replace(
             key,
-
             str(value)
-
         )
 
 
+    if updated != full_text:
 
-    if updated_text != full_text:
-
-
-        # clear existing runs
 
         for run in paragraph.runs:
-
-            run.text = ""
-
+            run.text=""
 
 
         if paragraph.runs:
+            paragraph.runs[0].text = updated
 
 
-            paragraph.runs[0].text = updated_text
 
 
-
-# -------------------------------------------------
-# Replace inside tables
-# -------------------------------------------------
-
-def replace_text_in_table(table,replacements):
+def replace_table(table,mapping):
 
 
     for row in table.rows:
 
-
         for cell in row.cells:
-
 
             for paragraph in cell.paragraphs:
 
-
-                replace_text_in_paragraph(
-
+                replace_paragraph(
                     paragraph,
-
-                    replacements
-
+                    mapping
                 )
 
 
 
-# -------------------------------------------------
-# Convert resume JSON into template placeholders
-# -------------------------------------------------
-
-def create_placeholder_mapping(data):
 
 
-    mapping = {}
+def build_mapping(data):
+
+
+    mapping={}
 
 
 
     # Simple fields
 
-    simple_fields = [
-
-        "name",
-
-        "email",
-
-        "phone",
-
-        "location",
-
-        "job_title",
-
-        "summary"
-
-    ]
+    for key,value in data.items():
 
 
+        if not isinstance(value,(list,dict)):
 
-    for field in simple_fields:
 
+            mapping[
 
-        mapping[
+            "{{"+key.upper()+"}}"
 
-            "{{" + field.upper() + "}}"
+            ] = value
 
-        ] = data.get(
-
-            field,
-
-            ""
-
-        )
 
 
 
     # Skills
 
+    mapping["{{SKILLS}}"] = ", ".join(
 
-    skills = data.get(
+        data.get(
+            "skills",
+            []
 
-        "skills",
-
-        []
+        )
 
     )
 
 
-    if isinstance(skills,list):
 
 
-        mapping["{{SKILLS}}"] = ", ".join(skills)
-
-
-    else:
-
-
-        mapping["{{SKILLS}}"] = skills
-
-
-
-    # -------------------------------------------------
     # Education
-    # -------------------------------------------------
 
 
-    education = data.get(
+    for i,item in enumerate(
 
-        "education",
-
-        []
-
-    )
-
-
-    for index,item in enumerate(
-
-        education,
+        data.get("education",[]),
 
         1
 
     ):
 
 
-
-        mapping[
-
-        f"{{{{EDUCATION.{index}.DEGREE}}}}"
-
-        ] = item.get(
-
-            "degree",
-
-            ""
-
-        )
-
-
-
-        mapping[
-
-        f"{{{{EDUCATION.{index}.UNIVERSITY}}}}"
-
-        ] = item.get(
-
-            "university",
-
-            ""
-
-        )
-
-
-
-        mapping[
-
-        f"{{{{EDUCATION.{index}.YEAR}}}}"
-
-        ] = item.get(
-
-            "year",
-
-            ""
-
-        )
-
-
-
-    # -------------------------------------------------
-    # Experience
-    # -------------------------------------------------
-
-
-    experience = data.get(
-
-        "experience",
-
-        []
-
-    )
-
-
-
-    for index,item in enumerate(
-
-        experience,
-
-        1
-
-    ):
-
-
-
-        fields=[
-
-            "role",
-
-            "company",
-
-            "location",
-
-            "dates",
-
-            "bullet1",
-
-            "bullet2",
-
-            "bullet3"
-
-        ]
-
-
-
-        for field in fields:
+        for k,v in item.items():
 
 
             mapping[
 
-            f"{{{{EXPERIENCE.{index}.{field.upper()}}}}}"
+            f"{{{{EDUCATION.{i}.{k.upper()}}}}}"
 
-            ] = item.get(
-
-                field,
-
-                ""
-
-            )
-
-
-
-    # -------------------------------------------------
-    # Achievements
-    # -------------------------------------------------
-
-
-    achievements = data.get(
-
-        "achievements",
-
-        []
-
-    )
-
-
-
-    if isinstance(
-
-        achievements,
-
-        list
-
-    ):
-
-
-        mapping["{{ACHIEVEMENTS}}"] = "\n".join(
-
-            achievements
-
-        )
-
-
-    else:
-
-
-        mapping["{{ACHIEVEMENTS}}"] = achievements
-
-
-
-    # -------------------------------------------------
-    # Certifications
-    # -------------------------------------------------
-
-
-    certifications = data.get(
-
-        "certifications",
-
-        []
-
-    )
-
-
-
-    if isinstance(
-
-        certifications,
-
-        list
-
-    ):
-
-
-        mapping["{{CERTIFICATIONS}}"] = "\n".join(
-
-            certifications
-
-        )
-
-
-    else:
-
-
-        mapping["{{CERTIFICATIONS}}"] = certifications
+            ] = v
 
 
 
 
-    # -------------------------------------------------
-    # Projects
-    # -------------------------------------------------
+    # Experience
 
 
-    projects=data.get(
+    for i,item in enumerate(
 
-        "projects",
-
-        []
-
-    )
-
-
-
-    for index,item in enumerate(
-
-        projects,
+        data.get("experience",[]),
 
         1
 
     ):
 
 
+        for k,v in item.items():
 
-        mapping[
 
-        f"{{{{PROJECTS.{index}.NAME}}}}"
+            mapping[
 
-        ] = item.get(
+            f"{{{{EXPERIENCE.{i}.{k.upper()}}}}}"
 
-            "name",
+            ] = v
 
-            ""
+
+
+
+    # Projects
+
+
+    for i,item in enumerate(
+
+        data.get("projects",[]),
+
+        1
+
+    ):
+
+
+        for k,v in item.items():
+
+
+            mapping[
+
+            f"{{{{PROJECTS.{i}.{k.upper()}}}}}"
+
+            ] = v
+
+
+
+
+
+    # Achievements
+
+
+    mapping["{{ACHIEVEMENTS}}"] = "\n".join(
+
+        data.get(
+
+            "achievements",
+
+            []
 
         )
 
-
-
-        mapping[
-
-        f"{{{{PROJECTS.{index}.LINK}}}}"
-
-        ] = item.get(
-
-            "link",
-
-            ""
-
-        )
+    )
 
 
 
-        mapping[
 
-        f"{{{{PROJECTS.{index}.DESCRIPTION}}}}"
+    # Certifications
 
-        ] = item.get(
 
-            "description",
+    mapping["{{CERTIFICATIONS}}"] = "\n".join(
 
-            ""
+        data.get(
+
+            "certifications",
+
+            []
 
         )
+
+    )
 
 
 
@@ -437,14 +209,12 @@ def create_placeholder_mapping(data):
 
 
 
-# -------------------------------------------------
-# Main DOCX Generator
-# -------------------------------------------------
+
 
 def create_docx(template_name,resume_data):
 
 
-    template_path = os.path.join(
+    template_path=os.path.join(
 
         "templates",
 
@@ -453,19 +223,15 @@ def create_docx(template_name,resume_data):
     )
 
 
-
     if not os.path.exists(template_path):
 
-
         raise FileNotFoundError(
-
-            f"Template not found: {template_path}"
-
+            template_path
         )
 
 
 
-    doc = Document(
+    doc=Document(
 
         template_path
 
@@ -473,7 +239,7 @@ def create_docx(template_name,resume_data):
 
 
 
-    replacements = create_placeholder_mapping(
+    mapping=build_mapping(
 
         resume_data
 
@@ -481,42 +247,31 @@ def create_docx(template_name,resume_data):
 
 
 
-    # Paragraphs
-
-
     for paragraph in doc.paragraphs:
 
-
-        replace_text_in_paragraph(
+        replace_paragraph(
 
             paragraph,
 
-            replacements
+            mapping
 
         )
 
-
-
-    # Tables
 
 
     for table in doc.tables:
 
-
-        replace_text_in_table(
+        replace_table(
 
             table,
 
-            replacements
+            mapping
 
         )
 
 
 
-    # Save generated file
-
-
-    output_file = tempfile.NamedTemporaryFile(
+    output=tempfile.NamedTemporaryFile(
 
         delete=False,
 
@@ -528,10 +283,10 @@ def create_docx(template_name,resume_data):
 
     doc.save(
 
-        output_file.name
+        output.name
 
     )
 
 
 
-    return output_file.name
+    return output.name
