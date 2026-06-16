@@ -1,56 +1,102 @@
-from reportlab.platypus import (
-    SimpleDocTemplate,
-    Paragraph,
-    Spacer
-)
-
-from reportlab.lib.styles import getSampleStyleSheet
+import os
+import subprocess
+import platform
 
 
 
-def create_pdf(content):
+def convert_to_pdf(docx_file):
 
 
-    file_path = "AI_Resume.pdf"
+    if not os.path.exists(docx_file):
 
+        raise FileNotFoundError(
 
-
-    doc = SimpleDocTemplate(
-        file_path
-    )
-
-
-    styles = getSampleStyleSheet()
-
-
-
-    story=[]
-
-
-
-    for line in content.split("\n"):
-
-
-        story.append(
-
-            Paragraph(
-            line,
-            styles["Normal"]
-            )
+            f"DOCX file not found: {docx_file}"
 
         )
 
 
-        story.append(
-            Spacer(1,12)
-        )
 
+    output_dir = os.path.dirname(
 
+        docx_file
 
-    doc.build(
-        story
     )
 
 
 
-    return file_path
+    system = platform.system()
+
+
+
+    # Streamlit Cloud Linux
+
+    if system == "Linux":
+
+
+        subprocess.run(
+
+            [
+
+                "libreoffice",
+
+                "--headless",
+
+                "--convert-to",
+
+                "pdf",
+
+                "--outdir",
+
+                output_dir,
+
+                docx_file
+
+            ],
+
+            check=True
+
+        )
+
+
+
+    else:
+
+
+        # Windows / Local
+
+        from docx2pdf import convert
+
+
+        convert(
+
+            docx_file,
+
+            output_dir
+
+        )
+
+
+
+    pdf_file = docx_file.replace(
+
+        ".docx",
+
+        ".pdf"
+
+    )
+
+
+
+    if not os.path.exists(pdf_file):
+
+
+        raise Exception(
+
+            "PDF conversion failed"
+
+        )
+
+
+
+    return pdf_file
