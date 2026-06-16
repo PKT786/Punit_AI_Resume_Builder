@@ -1,9 +1,13 @@
 from docx import Document
 import os
-import re
 import tempfile
 
 
+
+# -------------------------------------------------
+# Replace text inside paragraph
+# Handles Word split placeholders
+# -------------------------------------------------
 
 def replace_text_in_paragraph(paragraph, replacements):
 
@@ -24,6 +28,11 @@ def replace_text_in_paragraph(paragraph, replacements):
     for key,value in replacements.items():
 
 
+        if value is None:
+
+            value = ""
+
+
         updated_text = updated_text.replace(
 
             key,
@@ -37,19 +46,26 @@ def replace_text_in_paragraph(paragraph, replacements):
     if updated_text != full_text:
 
 
+        # clear existing runs
+
         for run in paragraph.runs:
 
             run.text = ""
 
 
+
         if paragraph.runs:
+
 
             paragraph.runs[0].text = updated_text
 
 
 
+# -------------------------------------------------
+# Replace inside tables
+# -------------------------------------------------
 
-def replace_in_table(table, replacements):
+def replace_text_in_table(table,replacements):
 
 
     for row in table.rows:
@@ -71,65 +87,361 @@ def replace_in_table(table, replacements):
 
 
 
-def flatten_resume_data(data):
+# -------------------------------------------------
+# Convert resume JSON into template placeholders
+# -------------------------------------------------
+
+def create_placeholder_mapping(data):
 
 
-    result={}
-
-
-
-    for key,value in data.items():
-
-
-        if isinstance(value,list):
-
-
-            for index,item in enumerate(value,1):
-
-
-                if isinstance(item,dict):
-
-
-                    for k,v in item.items():
-
-
-                        result[
-
-                        f"{{{{{key.upper()}.{index}.{k.upper()}}}}}"
-
-                        ] = v
+    mapping = {}
 
 
 
-                else:
+    # Simple fields
 
+    simple_fields = [
 
-                    result[
+        "name",
 
-                    f"{{{{{key.upper()}.{index}}}}}"
+        "email",
 
-                    ] = item
+        "phone",
 
+        "location",
 
+        "job_title",
 
-        else:
+        "summary"
 
-
-            result[
-
-            f"{{{{{key.upper()}}}}}"
-
-            ] = value
-
-
-
-    return result
+    ]
 
 
 
+    for field in simple_fields:
+
+
+        mapping[
+
+            "{{" + field.upper() + "}}"
+
+        ] = data.get(
+
+            field,
+
+            ""
+
+        )
+
+
+
+    # Skills
+
+
+    skills = data.get(
+
+        "skills",
+
+        []
+
+    )
+
+
+    if isinstance(skills,list):
+
+
+        mapping["{{SKILLS}}"] = ", ".join(skills)
+
+
+    else:
+
+
+        mapping["{{SKILLS}}"] = skills
+
+
+
+    # -------------------------------------------------
+    # Education
+    # -------------------------------------------------
+
+
+    education = data.get(
+
+        "education",
+
+        []
+
+    )
+
+
+    for index,item in enumerate(
+
+        education,
+
+        1
+
+    ):
+
+
+
+        mapping[
+
+        f"{{{{EDUCATION.{index}.DEGREE}}}}"
+
+        ] = item.get(
+
+            "degree",
+
+            ""
+
+        )
+
+
+
+        mapping[
+
+        f"{{{{EDUCATION.{index}.UNIVERSITY}}}}"
+
+        ] = item.get(
+
+            "university",
+
+            ""
+
+        )
+
+
+
+        mapping[
+
+        f"{{{{EDUCATION.{index}.YEAR}}}}"
+
+        ] = item.get(
+
+            "year",
+
+            ""
+
+        )
+
+
+
+    # -------------------------------------------------
+    # Experience
+    # -------------------------------------------------
+
+
+    experience = data.get(
+
+        "experience",
+
+        []
+
+    )
+
+
+
+    for index,item in enumerate(
+
+        experience,
+
+        1
+
+    ):
+
+
+
+        fields=[
+
+            "role",
+
+            "company",
+
+            "location",
+
+            "dates",
+
+            "bullet1",
+
+            "bullet2",
+
+            "bullet3"
+
+        ]
+
+
+
+        for field in fields:
+
+
+            mapping[
+
+            f"{{{{EXPERIENCE.{index}.{field.upper()}}}}}"
+
+            ] = item.get(
+
+                field,
+
+                ""
+
+            )
+
+
+
+    # -------------------------------------------------
+    # Achievements
+    # -------------------------------------------------
+
+
+    achievements = data.get(
+
+        "achievements",
+
+        []
+
+    )
+
+
+
+    if isinstance(
+
+        achievements,
+
+        list
+
+    ):
+
+
+        mapping["{{ACHIEVEMENTS}}"] = "\n".join(
+
+            achievements
+
+        )
+
+
+    else:
+
+
+        mapping["{{ACHIEVEMENTS}}"] = achievements
+
+
+
+    # -------------------------------------------------
+    # Certifications
+    # -------------------------------------------------
+
+
+    certifications = data.get(
+
+        "certifications",
+
+        []
+
+    )
+
+
+
+    if isinstance(
+
+        certifications,
+
+        list
+
+    ):
+
+
+        mapping["{{CERTIFICATIONS}}"] = "\n".join(
+
+            certifications
+
+        )
+
+
+    else:
+
+
+        mapping["{{CERTIFICATIONS}}"] = certifications
+
+
+
+
+    # -------------------------------------------------
+    # Projects
+    # -------------------------------------------------
+
+
+    projects=data.get(
+
+        "projects",
+
+        []
+
+    )
+
+
+
+    for index,item in enumerate(
+
+        projects,
+
+        1
+
+    ):
+
+
+
+        mapping[
+
+        f"{{{{PROJECTS.{index}.NAME}}}}"
+
+        ] = item.get(
+
+            "name",
+
+            ""
+
+        )
+
+
+
+        mapping[
+
+        f"{{{{PROJECTS.{index}.LINK}}}}"
+
+        ] = item.get(
+
+            "link",
+
+            ""
+
+        )
+
+
+
+        mapping[
+
+        f"{{{{PROJECTS.{index}.DESCRIPTION}}}}"
+
+        ] = item.get(
+
+            "description",
+
+            ""
+
+        )
+
+
+
+    return mapping
+
+
+
+
+# -------------------------------------------------
+# Main DOCX Generator
+# -------------------------------------------------
 
 def create_docx(template_name,resume_data):
-
 
 
     template_path = os.path.join(
@@ -147,7 +459,7 @@ def create_docx(template_name,resume_data):
 
         raise FileNotFoundError(
 
-            template_path
+            f"Template not found: {template_path}"
 
         )
 
@@ -161,7 +473,7 @@ def create_docx(template_name,resume_data):
 
 
 
-    replacements = flatten_resume_data(
+    replacements = create_placeholder_mapping(
 
         resume_data
 
@@ -169,7 +481,8 @@ def create_docx(template_name,resume_data):
 
 
 
-    # Paragraph replacement
+    # Paragraphs
+
 
     for paragraph in doc.paragraphs:
 
@@ -184,12 +497,13 @@ def create_docx(template_name,resume_data):
 
 
 
-    # Table replacement
+    # Tables
+
 
     for table in doc.tables:
 
 
-        replace_in_table(
+        replace_text_in_table(
 
             table,
 
@@ -199,7 +513,10 @@ def create_docx(template_name,resume_data):
 
 
 
-    output = tempfile.NamedTemporaryFile(
+    # Save generated file
+
+
+    output_file = tempfile.NamedTemporaryFile(
 
         delete=False,
 
@@ -211,10 +528,10 @@ def create_docx(template_name,resume_data):
 
     doc.save(
 
-        output.name
+        output_file.name
 
     )
 
 
 
-    return output.name
+    return output_file.name
