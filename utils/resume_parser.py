@@ -1,5 +1,5 @@
-from docx import Document
 import re
+from docx import Document
 
 
 
@@ -9,23 +9,16 @@ def extract_resume_text(file):
     doc = Document(file)
 
 
-    content=[]
+    text=[]
 
 
     for p in doc.paragraphs:
 
 
-        if p.text.strip():
+        text.append(
+            p.text
+        )
 
-            content.append(
-
-                p.text.strip()
-
-            )
-
-
-
-    # tables
 
     for table in doc.tables:
 
@@ -36,15 +29,12 @@ def extract_resume_text(file):
             for cell in row.cells:
 
 
-                content.append(
-
+                text.append(
                     cell.text
-
                 )
 
 
-
-    return "\n".join(content)
+    return "\n".join(text)
 
 
 
@@ -53,60 +43,22 @@ def extract_resume_text(file):
 def parse_resume(text):
 
 
-    data={
+    resume={}
 
 
-        "name":"",
 
-        "email":"",
-
-        "phone":"",
-
-        "location":"",
-
-        "headline":"",
-
-        "summary":"",
-
-        "skills":[],
-
-        "experience":[],
-
-        "education":[],
-
-        "projects":[]
-
-    }
-
-
+    # NAME
 
     lines=text.split("\n")
 
 
-
-    clean=[
-
-        x.strip()
-
-        for x in lines
-
-        if x.strip()
-
-    ]
+    resume["name"]=lines[0] if lines else ""
 
 
 
-    # Name
+    # EMAIL
 
-    if clean:
-
-        data["name"]=clean[0]
-
-
-
-    # Email
-
-    email=re.search(
+    email=re.findall(
 
         r'[\w\.-]+@[\w\.-]+',
 
@@ -115,72 +67,157 @@ def parse_resume(text):
     )
 
 
-    if email:
-
-        data["email"]=email.group()
+    resume["email"]=email[0] if email else ""
 
 
 
-    # Phone
 
-    phone=re.search(
+    # PHONE
 
-        r'\d{10}',
+    phone=re.findall(
+
+        r'\+?\d[\d -]{8,}',
 
         text
 
     )
 
 
-    if phone:
-
-        data["phone"]=phone.group()
+    resume["phone"]=phone[0] if phone else ""
 
 
 
-    # Skills section
 
-    skills=[
+    # SKILLS
 
-    "python",
+    skills=[]
 
-    "java",
 
-    "sql",
+    if "SKILLS" in text.upper():
 
-    "excel",
 
-    "cobol",
+        block=text.upper().split(
 
-    "jcl",
+            "SKILLS"
 
-    "mainframe",
+        )[1]
 
-    "aws",
 
-    "javascript",
+        skills=block.split("\n")[0].split(",")
 
-    "react"
+
+
+    resume["skills"]=[
+
+        s.strip()
+
+        for s in skills
+
+        if s.strip()
 
     ]
 
 
 
-    for s in skills:
+
+    # SUMMARY
+
+    resume["summary"]=text[:500]
 
 
-        if s.lower() in text.lower():
-
-            data["skills"].append(s)
 
 
 
-    # Complete resume as fallback
+    # EDUCATION
 
-    data["summary"]=text[:800]
+    resume["education"]=[
+
+        {
+
+        "degree":"",
+
+        "university":"",
+
+        "year":""
+
+        }
+
+    ]
 
 
-    data["experience"]=[text]
 
 
-    return data
+
+    # EXPERIENCE
+
+    resume["experience"]=[
+
+        {
+
+        "role":"",
+
+        "company":"",
+
+        "location":"",
+
+        "dates":"",
+
+        "bullet1":"",
+
+        "bullet2":"",
+
+        "bullet3":""
+
+        }
+
+    ]
+
+
+
+
+
+    # ACHIEVEMENTS
+
+
+    resume["achievements"]=[
+
+        "ITIL Certified"
+
+    ]
+
+
+
+
+
+    # CERTIFICATION
+
+
+    resume["certifications"]=[
+
+        ""
+
+    ]
+
+
+
+
+    # PROJECTS
+
+
+    resume["projects"]=[
+
+        {
+
+        "name":"",
+
+        "link":"",
+
+        "description":""
+
+        }
+
+    ]
+
+
+
+    return resume
