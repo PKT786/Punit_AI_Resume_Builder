@@ -1,0 +1,359 @@
+/* =====================================
+   AI Resume Builder Premium Theme
+   ===================================== */
+
+
+/* Main App Background */
+
+.stApp {
+
+    background: linear-gradient(
+        135deg,
+        #f8fbff 0%,
+        #eef5ff 50%,
+        #ffffff 100%
+    );
+
+    font-family:
+    "Inter",
+    "Segoe UI",
+    sans-serif;
+
+}
+
+
+
+/* Remove Streamlit top padding */
+
+.block-container {
+
+    padding-top: 2rem;
+
+    padding-bottom: 2rem;
+
+}
+
+
+
+/* Main Titles */
+
+h1 {
+
+    color:#0f172a;
+
+    font-size:42px !important;
+
+    font-weight:800;
+
+}
+
+
+
+h2 {
+
+    color:#1e293b;
+
+    font-weight:700;
+
+}
+
+
+
+h3 {
+
+    color:#334155;
+
+}
+
+
+
+/* Paragraph */
+
+p {
+
+    color:#475569;
+
+    font-size:16px;
+
+    line-height:1.6;
+
+}
+
+
+
+/* ==============================
+   Cards
+   ============================== */
+
+
+div[data-testid="stVerticalBlock"] > div {
+
+    border-radius:18px;
+
+}
+
+
+
+/* Feature Cards */
+
+
+.feature-card {
+
+
+    background:white;
+
+
+    padding:25px;
+
+
+    border-radius:18px;
+
+
+    box-shadow:
+
+    0px 8px 25px rgba(
+        15,
+        23,
+        42,
+        0.08
+    );
+
+
+    transition:0.3s;
+
+
+}
+
+
+
+.feature-card:hover {
+
+
+    transform:translateY(-5px);
+
+
+    box-shadow:
+
+    0px 12px 35px rgba(
+        15,
+        23,
+        42,
+        0.15
+    );
+
+
+}
+
+
+
+/* ==============================
+   Buttons
+   ============================== */
+
+
+.stButton button {
+
+
+    width:100%;
+
+
+    border-radius:12px;
+
+
+    padding:12px;
+
+
+    background:
+
+    linear-gradient(
+        90deg,
+        #2563eb,
+        #7c3aed
+    );
+
+
+    color:white;
+
+
+    font-size:16px;
+
+
+    font-weight:600;
+
+
+    border:none;
+
+
+}
+
+
+
+.stButton button:hover {
+
+
+    background:
+
+    linear-gradient(
+        90deg,
+        #1d4ed8,
+        #6d28d9
+    );
+
+
+}
+
+
+
+/* ==============================
+   Inputs
+   ============================== */
+
+
+input,
+textarea {
+
+
+    border-radius:12px !important;
+
+
+    border:1px solid #cbd5e1 !important;
+
+
+}
+
+
+
+/* ==============================
+   File Upload Box
+   ============================== */
+
+
+[data-testid="stFileUploader"] {
+
+
+    background:white;
+
+
+    padding:20px;
+
+
+    border-radius:16px;
+
+
+    border:2px dashed #94a3b8;
+
+
+}
+
+
+
+/* ==============================
+   Metrics / ATS Score
+   ============================== */
+
+
+[data-testid="stMetric"] {
+
+
+    background:white;
+
+
+    padding:20px;
+
+
+    border-radius:18px;
+
+
+    box-shadow:
+
+    0 8px 25px rgba(
+        0,
+        0,
+        0,
+        0.08
+    );
+
+
+}
+
+
+
+/* ==============================
+   Divider
+   ============================== */
+
+
+hr {
+
+
+    border:none;
+
+
+    height:1px;
+
+
+    background:#e2e8f0;
+
+
+}
+
+
+
+/* ==============================
+   Success / Warning Boxes
+   ============================== */
+
+
+.stAlert {
+
+
+    border-radius:14px;
+
+
+}
+
+
+
+/* ==============================
+   Sidebar
+   ============================== */
+
+
+section[data-testid="stSidebar"] {
+
+
+    background:
+
+    linear-gradient(
+        180deg,
+        #0f172a,
+        #1e293b
+    );
+
+
+}
+
+
+
+section[data-testid="stSidebar"] * {
+
+
+    color:white;
+
+
+}
+
+
+
+/* ==============================
+   Images
+   ============================== */
+
+
+img {
+
+
+    border-radius:18px;
+
+
+}
