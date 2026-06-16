@@ -3,7 +3,6 @@ import streamlit as st
 
 def load_css():
 
-
     with open(
         "assets/style.css"
     ) as f:
