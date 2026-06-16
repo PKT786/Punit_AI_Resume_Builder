@@ -1,198 +1,220 @@
 from docx import Document
 import os
+import re
+import tempfile
 
 
 
-def replace_all(doc,text_map):
+def replace_text_in_paragraph(paragraph, replacements):
 
 
-    # paragraphs
+    full_text = ""
 
 
-    for p in doc.paragraphs:
+    for run in paragraph.runs:
 
-
-        for key,value in text_map.items():
-
-
-            if key in p.text:
-
-
-                for run in p.runs:
-
-
-                    run.text = run.text.replace(
-
-                        key,
-
-                        value
-
-                    )
+        full_text += run.text
 
 
 
-    # tables
+    updated_text = full_text
 
+
+
+    for key,value in replacements.items():
+
+
+        updated_text = updated_text.replace(
+
+            key,
+
+            str(value)
+
+        )
+
+
+
+    if updated_text != full_text:
+
+
+        for run in paragraph.runs:
+
+            run.text = ""
+
+
+        if paragraph.runs:
+
+            paragraph.runs[0].text = updated_text
+
+
+
+
+def replace_in_table(table, replacements):
+
+
+    for row in table.rows:
+
+
+        for cell in row.cells:
+
+
+            for paragraph in cell.paragraphs:
+
+
+                replace_text_in_paragraph(
+
+                    paragraph,
+
+                    replacements
+
+                )
+
+
+
+def flatten_resume_data(data):
+
+
+    result={}
+
+
+
+    for key,value in data.items():
+
+
+        if isinstance(value,list):
+
+
+            for index,item in enumerate(value,1):
+
+
+                if isinstance(item,dict):
+
+
+                    for k,v in item.items():
+
+
+                        result[
+
+                        f"{{{{{key.upper()}.{index}.{k.upper()}}}}}"
+
+                        ] = v
+
+
+
+                else:
+
+
+                    result[
+
+                    f"{{{{{key.upper()}.{index}}}}}"
+
+                    ] = item
+
+
+
+        else:
+
+
+            result[
+
+            f"{{{{{key.upper()}}}}}"
+
+            ] = value
+
+
+
+    return result
+
+
+
+
+def create_docx(template_name,resume_data):
+
+
+
+    template_path = os.path.join(
+
+        "templates",
+
+        template_name
+
+    )
+
+
+
+    if not os.path.exists(template_path):
+
+
+        raise FileNotFoundError(
+
+            template_path
+
+        )
+
+
+
+    doc = Document(
+
+        template_path
+
+    )
+
+
+
+    replacements = flatten_resume_data(
+
+        resume_data
+
+    )
+
+
+
+    # Paragraph replacement
+
+    for paragraph in doc.paragraphs:
+
+
+        replace_text_in_paragraph(
+
+            paragraph,
+
+            replacements
+
+        )
+
+
+
+    # Table replacement
 
     for table in doc.tables:
 
 
-        for row in table.rows:
+        replace_in_table(
 
+            table,
 
-            for cell in row.cells:
-
-
-                for p in cell.paragraphs:
-
-
-                    for key,value in text_map.items():
-
-
-                        if key in p.text:
-
-
-                            p.text=p.text.replace(
-
-                                key,
-
-                                value
-
-                            )
-
-
-
-def create_docx(template,resume):
-
-
-    path=os.path.join(
-
-        "templates",
-
-        template
-
-    )
-
-
-    doc=Document(path)
-
-
-
-    experience="\n".join(
-
-        resume.get(
-
-            "experience",
-
-            []
+            replacements
 
         )
 
-    )
 
 
+    output = tempfile.NamedTemporaryFile(
 
-    skills=", ".join(
+        delete=False,
 
-        resume.get(
-
-            "skills",
-
-            [])
+        suffix=".docx"
 
     )
 
 
 
-    education="\n".join(
+    doc.save(
 
-        resume.get(
-
-            "education",
-
-            [])
+        output.name
 
     )
 
 
 
-    mapping={
-
-
-
-    "{{NAME}}":
-
-    resume.get("name",""),
-
-
-
-    "{{EMAIL}}":
-
-    resume.get("email",""),
-
-
-
-    "{{PHONE}}":
-
-    resume.get("phone",""),
-
-
-
-    "{{LOCATION}}":
-
-    resume.get("location",""),
-
-
-
-    "{{HEADLINE}}":
-
-    resume.get("headline",""),
-
-
-
-    "{{SUMMARY}}":
-
-    resume.get("summary",""),
-
-
-
-    "{{SKILLS}}":
-
-    skills,
-
-
-
-    "{{EXPERIENCE}}":
-
-    experience,
-
-
-
-    "{{EDUCATION}}":
-
-    education
-
-
-
-    }
-
-
-
-    replace_all(
-
-        doc,
-
-        mapping
-
-    )
-
-
-
-    output="final_resume.docx"
-
-
-    doc.save(output)
-
-
-
-    return output
+    return output.name
