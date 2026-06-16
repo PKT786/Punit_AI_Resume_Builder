@@ -230,3 +230,4 @@ else:
     st.info(
         "Please upload resume file"
    
+    )
