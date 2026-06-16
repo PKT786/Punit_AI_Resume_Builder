@@ -2,11 +2,6 @@ import streamlit as st
 import os
 
 
-
-# -----------------------------
-# Page Config
-# -----------------------------
-
 st.set_page_config(
 
     page_title="Download Resume",
@@ -18,83 +13,45 @@ st.set_page_config(
 )
 
 
-
-# -----------------------------
-# CSS
-# -----------------------------
-
 from utils.theme import load_css
 
 load_css()
 
 
 
-# -----------------------------
-# Imports
-# -----------------------------
-
 from utils.docx_generator import create_docx
+
+
+
+# PDF optional
 
 from utils.pdf_generator import convert_to_pdf
 
 
 
-# -----------------------------
-# Hero
-# -----------------------------
 
 
-def hero():
+# --------------------------------
+# Title
+# --------------------------------
 
 
-    image="assets/download.png"
+st.title(
 
+    "⬇️ Download Your Resume"
 
-
-    col1,col2 = st.columns(2)
-
-
-
-    with col1:
-
-
-        st.title(
-
-            "⬇️ Download Resume"
-
-        )
-
-
-        st.write(
-
-        """
-
-        Generate your professional resume.
-
-        Choose template and download DOCX/PDF.
-
-        """
-
-        )
+)
 
 
 
-    with col2:
+st.write(
 
+"""
+Generate your professional resume using premium templates.
 
-        if os.path.exists(image):
+"""
 
-            st.image(
-
-                image,
-
-                use_container_width=True
-
-            )
-
-
-
-hero()
+)
 
 
 
@@ -102,41 +59,20 @@ st.divider()
 
 
 
-# -----------------------------
-# Check Resume Data
-# -----------------------------
 
 
-if "resume" not in st.session_state:
+# --------------------------------
+# Check Session Data
+# --------------------------------
+
+
+if "resume_data" not in st.session_state:
+
 
 
     st.warning(
 
-    """
-
-    No resume data found.
-
-    Please create or upload resume first.
-
-    """
-
-    )
-
-
-    st.page_link(
-
-        "pages/1_Create_Resume.py",
-
-        label="📝 Create Resume"
-
-    )
-
-
-    st.page_link(
-
-        "pages/2_Upload_Resume.py",
-
-        label="📂 Upload Resume"
+        "Please upload resume first"
 
     )
 
@@ -145,153 +81,65 @@ if "resume" not in st.session_state:
 
 
 
-resume_data = st.session_state["resume"]
+
+
+resume_data = st.session_state["resume_data"]
 
 
 
 
-# -----------------------------
-# Show Resume Details
-# -----------------------------
 
 
-st.subheader(
-
-"Resume Preview"
-
-)
-
-
-col1,col2 = st.columns(2)
-
-
-
-with col1:
-
-
-    st.write(
-
-        "Name",
-
-        resume_data.get(
-
-            "name",
-
-            ""
-
-        )
-
-    )
-
-
-    st.write(
-
-        "Email",
-
-        resume_data.get(
-
-            "email",
-
-            ""
-
-        )
-
-    )
-
-
-
-with col2:
-
-
-    st.write(
-
-        "Role",
-
-        resume_data.get(
-
-            "job_title",
-
-            ""
-
-        )
-
-    )
-
-
-    st.write(
-
-        "Skills",
-
-        ", ".join(
-
-            resume_data.get(
-
-                "skills",
-
-                []
-
-            )
-
-        )
-
-    )
-
-
-
-st.divider()
-
-
-
-# -----------------------------
+# --------------------------------
 # Template Selection
-# -----------------------------
-
-
-st.subheader(
-
-"Select Resume Template"
-
-)
-
+# --------------------------------
 
 
 template = st.selectbox(
 
-"Choose Template",
+    "Choose Resume Template",
 
-[
+    [
 
-"modern_resume.docx",
+        "modern_resume.docx",
 
-"ats_resume.docx",
+        "ats_resume.docx",
 
-"developer_resume.docx"
+        "developer_resume.docx"
 
-]
+    ]
 
 )
 
 
 
-st.divider()
+
+
+st.success(
+
+    f"Selected Template: {template}"
+
+)
 
 
 
-# -----------------------------
-# Generate DOCX
-# -----------------------------
+
+
+# --------------------------------
+# Generate Resume
+# --------------------------------
 
 
 if st.button(
 
-"Generate DOCX Resume"
+    "Generate Resume"
 
 ):
 
 
     with st.spinner(
 
-        "Creating resume..."
+        "Creating your resume..."
 
     ):
 
@@ -307,28 +155,38 @@ if st.button(
 
 
 
-        st.session_state["docx_file"] = docx_file
+        st.session_state["generated_docx"] = docx_file
+
 
 
 
     st.success(
 
-    "DOCX Resume Generated Successfully"
+        "Resume created successfully"
 
     )
 
 
 
 
+
+
+
+# --------------------------------
 # Download DOCX
+# --------------------------------
 
 
-if "docx_file" in st.session_state:
+if "generated_docx" in st.session_state:
+
+
+    docx_path = st.session_state["generated_docx"]
+
 
 
     with open(
 
-        st.session_state["docx_file"],
+        docx_path,
 
         "rb"
 
@@ -337,47 +195,48 @@ if "docx_file" in st.session_state:
 
         st.download_button(
 
-            label="⬇ Download DOCX",
+            label="📄 Download DOCX Resume",
 
             data=file,
 
             file_name="Professional_Resume.docx",
 
-            mime=
-
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
         )
 
+
+
+
+
+
+# --------------------------------
+# PDF Download
+# --------------------------------
 
 
 st.divider()
 
 
 
-# -----------------------------
-# Generate PDF
-# -----------------------------
+st.subheader(
+
+    "PDF Version"
+
+)
 
 
-if st.button(
-
-"Generate PDF Resume"
-
-):
 
 
-    if "docx_file" not in st.session_state:
+
+if "generated_docx" in st.session_state:
 
 
-        st.error(
+    if st.button(
 
-        "First generate DOCX resume"
+        "Create PDF"
 
-        )
-
-
-    else:
+    ):
 
 
 
@@ -391,35 +250,27 @@ if st.button(
 
             pdf_file = convert_to_pdf(
 
-                st.session_state["docx_file"]
+                st.session_state["generated_docx"]
 
             )
 
 
 
-            st.session_state["pdf_file"] = pdf_file
-
-
-
-        st.success(
-
-        "PDF Generated Successfully"
-
-        )
+            st.session_state["generated_pdf"] = pdf_file
 
 
 
 
+if "generated_pdf" in st.session_state:
 
-# Download PDF
 
+    pdf_path = st.session_state["generated_pdf"]
 
-if "pdf_file" in st.session_state:
 
 
     with open(
 
-        st.session_state["pdf_file"],
+        pdf_path,
 
         "rb"
 
@@ -428,7 +279,7 @@ if "pdf_file" in st.session_state:
 
         st.download_button(
 
-            label="⬇ Download PDF",
+            label="📕 Download PDF Resume",
 
             data=file,
 
@@ -437,3 +288,29 @@ if "pdf_file" in st.session_state:
             mime="application/pdf"
 
         )
+
+
+
+
+
+# --------------------------------
+# Preview
+# --------------------------------
+
+
+st.divider()
+
+
+st.subheader(
+
+    "Resume Data Preview"
+
+)
+
+
+
+st.json(
+
+    resume_data
+
+)
