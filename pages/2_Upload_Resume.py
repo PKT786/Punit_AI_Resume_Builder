@@ -141,11 +141,19 @@ if uploaded_file:
         # Parse details
 
 
-        resume_data = parse_resume(
+        resume_data["job_title"]=""
 
-            resume_text
+resume_data["location"]=""
 
-        )
+resume_data["experience"] = resume_data.get(
+    "experience",
+    []
+)
+
+resume_data["projects"] = resume_data.get(
+    "projects",
+    []
+)
 
 
 
