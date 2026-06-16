@@ -1,54 +1,142 @@
 import streamlit as st
-
-from utils.theme import load_css
-
-
-load_css()
+import os
 
 
-st.title(
-"AI Resume Builder"
-)
-import streamlit as st
 
-
-from utils.docx_generator import create_docx
-from utils.ui_components import hero_section
-
-hero_section(
-
-"download.png",
-
-"Download Your Resume",
-
-"Choose template and generate DOCX/PDF resume"
-
-)
+# -----------------------------
+# Page Config
+# -----------------------------
 
 st.set_page_config(
 
     page_title="Download Resume",
 
-    page_icon="⬇️"
+    page_icon="⬇️",
+
+    layout="wide"
 
 )
 
 
 
-st.title(
+# -----------------------------
+# CSS
+# -----------------------------
 
-"⬇️ Download Resume"
+from utils.theme import load_css
 
-)
+load_css()
 
 
 
-if "resume_data" not in st.session_state:
+# -----------------------------
+# Imports
+# -----------------------------
+
+from utils.docx_generator import create_docx
+
+from utils.pdf_generator import convert_to_pdf
+
+
+
+# -----------------------------
+# Hero
+# -----------------------------
+
+
+def hero():
+
+
+    image="assets/download.png"
+
+
+
+    col1,col2 = st.columns(2)
+
+
+
+    with col1:
+
+
+        st.title(
+
+            "⬇️ Download Resume"
+
+        )
+
+
+        st.write(
+
+        """
+
+        Generate your professional resume.
+
+        Choose template and download DOCX/PDF.
+
+        """
+
+        )
+
+
+
+    with col2:
+
+
+        if os.path.exists(image):
+
+            st.image(
+
+                image,
+
+                use_container_width=True
+
+            )
+
+
+
+hero()
+
+
+
+st.divider()
+
+
+
+# -----------------------------
+# Check Resume Data
+# -----------------------------
+
+
+if "resume" not in st.session_state:
 
 
     st.warning(
 
-    "Please upload resume first"
+    """
+
+    No resume data found.
+
+    Please create or upload resume first.
+
+    """
+
+    )
+
+
+    st.page_link(
+
+        "pages/1_Create_Resume.py",
+
+        label="📝 Create Resume"
+
+    )
+
+
+    st.page_link(
+
+        "pages/2_Upload_Resume.py",
+
+        label="📂 Upload Resume"
 
     )
 
@@ -58,6 +146,112 @@ if "resume_data" not in st.session_state:
 
 
 resume_data = st.session_state["resume"]
+
+
+
+
+# -----------------------------
+# Show Resume Details
+# -----------------------------
+
+
+st.subheader(
+
+"Resume Preview"
+
+)
+
+
+col1,col2 = st.columns(2)
+
+
+
+with col1:
+
+
+    st.write(
+
+        "Name",
+
+        resume_data.get(
+
+            "name",
+
+            ""
+
+        )
+
+    )
+
+
+    st.write(
+
+        "Email",
+
+        resume_data.get(
+
+            "email",
+
+            ""
+
+        )
+
+    )
+
+
+
+with col2:
+
+
+    st.write(
+
+        "Role",
+
+        resume_data.get(
+
+            "job_title",
+
+            ""
+
+        )
+
+    )
+
+
+    st.write(
+
+        "Skills",
+
+        ", ".join(
+
+            resume_data.get(
+
+                "skills",
+
+                []
+
+            )
+
+        )
+
+    )
+
+
+
+st.divider()
+
+
+
+# -----------------------------
+# Template Selection
+# -----------------------------
+
+
+st.subheader(
+
+"Select Resume Template"
+
+)
 
 
 
@@ -79,36 +273,167 @@ template = st.selectbox(
 
 
 
+st.divider()
+
+
+
+# -----------------------------
+# Generate DOCX
+# -----------------------------
+
+
 if st.button(
 
-"Generate Resume"
+"Generate DOCX Resume"
 
 ):
 
 
-    file = create_docx(
+    with st.spinner(
 
-        template,
+        "Creating resume..."
 
-        resume_data
+    ):
+
+
+
+        docx_file = create_docx(
+
+            template,
+
+            resume_data
+
+        )
+
+
+
+        st.session_state["docx_file"] = docx_file
+
+
+
+    st.success(
+
+    "DOCX Resume Generated Successfully"
 
     )
 
 
 
-    with open(file,"rb") as f:
+
+# Download DOCX
+
+
+if "docx_file" in st.session_state:
+
+
+    with open(
+
+        st.session_state["docx_file"],
+
+        "rb"
+
+    ) as file:
 
 
         st.download_button(
 
+            label="⬇ Download DOCX",
 
-            label="Download DOCX",
+            data=file,
 
-            data=f,
+            file_name="Professional_Resume.docx",
 
-            file_name=file,
+            mime=
 
-            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
+        )
+
+
+
+st.divider()
+
+
+
+# -----------------------------
+# Generate PDF
+# -----------------------------
+
+
+if st.button(
+
+"Generate PDF Resume"
+
+):
+
+
+    if "docx_file" not in st.session_state:
+
+
+        st.error(
+
+        "First generate DOCX resume"
+
+        )
+
+
+    else:
+
+
+
+        with st.spinner(
+
+            "Creating PDF..."
+
+        ):
+
+
+
+            pdf_file = convert_to_pdf(
+
+                st.session_state["docx_file"]
+
+            )
+
+
+
+            st.session_state["pdf_file"] = pdf_file
+
+
+
+        st.success(
+
+        "PDF Generated Successfully"
+
+        )
+
+
+
+
+
+# Download PDF
+
+
+if "pdf_file" in st.session_state:
+
+
+    with open(
+
+        st.session_state["pdf_file"],
+
+        "rb"
+
+    ) as file:
+
+
+        st.download_button(
+
+            label="⬇ Download PDF",
+
+            data=file,
+
+            file_name="Professional_Resume.pdf",
+
+            mime="application/pdf"
 
         )
