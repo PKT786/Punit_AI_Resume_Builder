@@ -7,78 +7,187 @@ def extract_resume_text(file):
 
     doc = Document(file)
 
-    text=[]
+    content = []
 
 
     for p in doc.paragraphs:
 
         if p.text.strip():
 
-            text.append(p.text.strip())
-
+            content.append(
+                p.text.strip()
+            )
 
 
     for table in doc.tables:
 
         for row in table.rows:
 
-            text.append(
+            row_text = []
 
-                " ".join(
+            for cell in row.cells:
 
-                    c.text.strip()
-
-                    for c in row.cells
-
+                row_text.append(
+                    cell.text.strip()
                 )
 
+
+            content.append(
+                " ".join(row_text)
             )
 
 
-    return "\n".join(text)
+    return "\n".join(content)
 
 
 
 
 
+def clean_list(items):
 
-def section_extract(text, headings):
+    result=[]
+
+    for item in items:
+
+        item=item.strip()
+
+        item=item.replace(
+            "•",
+            ""
+        )
+
+        item=item.replace(
+            "-",
+            ""
+        )
 
 
-    pattern="|".join(headings)
+        if item:
+
+            result.append(item)
 
 
-    match=re.search(
+    return result
 
-        rf"({pattern})(.*?)(?=\n[A-Z][A-Z\s]+$|$)",
 
-        text,
 
-        re.I|re.S
+
+
+def extract_email(text):
+
+    match=re.findall(
+        r'\S+@\S+',
+        text
+    )
+
+    return match[0] if match else ""
+
+
+
+
+
+def extract_phone(text):
+
+    match=re.findall(
+
+        r'(\+?\d[\d\s\-]{8,})',
+
+        text
 
     )
 
-
-    if match:
-
-        return match.group(2).strip()
-
-
-    return ""
+    return match[0] if match else ""
 
 
 
+
+
+def extract_links(text):
+
+    links=re.findall(
+
+        r'https?://\S+',
+
+        text
+
+    )
+
+    linkedin=""
+
+    github=""
+
+
+    for link in links:
+
+
+        if "linkedin" in link.lower():
+
+            linkedin=link
+
+
+        if "github" in link.lower():
+
+            github=link
+
+
+
+    return linkedin,github
+
+
+
+
+
+def find_section(text, keywords):
+
+
+    lines=text.split("\n")
+
+
+    start=False
+
+    data=[]
+
+
+    for line in lines:
+
+
+        low=line.lower()
+
+
+
+        if any(
+
+            k.lower() in low
+
+            for k in keywords
+
+        ):
+
+            start=True
+
+            continue
+
+
+
+        if start:
+
+
+            if line.isupper():
+
+                break
+
+
+            data.append(line)
+
+
+
+    return data
 
 
 
 
 
 def parse_resume(text):
-
-
-    data={}
-
-
 
 
     lines=[
@@ -93,74 +202,105 @@ def parse_resume(text):
 
 
 
-    # Name
-
-
-    data["name"]=lines[0]
+    data={}
 
 
 
-    # Email
+    # NAME
 
-
-    email=re.findall(
-
-        r'\S+@\S+',
-
-        text
-
-    )
-
-
-    data["email"]=email[0] if email else ""
+    data["name"] = lines[0] if lines else ""
 
 
 
+    # Contact
 
 
-    # Phone
+    data["email"]=extract_email(text)
+
+    data["phone"]=extract_phone(text)
 
 
-    phone=re.findall(
 
-        r'\+?\d[\d\s-]{8,}',
-
-        text
-
-    )
+    linkedin,github=extract_links(text)
 
 
-    data["phone"]=phone[0] if phone else ""
+    data["linkedin"]=linkedin
+
+    data["github"]=github
+
+
+
+    data["location"]=""
 
 
 
 
+    # Job title
+
+
+    title_keywords=[
+
+        "developer",
+
+        "engineer",
+
+        "analyst",
+
+        "support",
+
+        "manager"
+
+    ]
 
 
 
-    # Summary
+    data["job_title"]=""
 
 
-    summary=section_extract(
+
+    for line in lines[:10]:
+
+
+        if any(
+
+            k in line.lower()
+
+            for k in title_keywords
+
+        ):
+
+
+            data["job_title"]=line
+
+            break
+
+
+
+
+
+    # SUMMARY
+
+
+    summary=find_section(
 
         text,
 
         [
 
-        "SUMMARY",
+            "summary",
 
-        "PROFESSIONAL SUMMARY",
+            "profile",
 
-        "PROFILE"
+            "objective",
+
+            "professional summary"
 
         ]
 
     )
 
 
-    data["summary"]=summary
-
-
+    data["summary"]=" ".join(summary)
 
 
 
@@ -169,39 +309,26 @@ def parse_resume(text):
     # Skills
 
 
-    skills=section_extract(
+    skills=find_section(
 
         text,
 
         [
 
-        "SKILLS",
+            "skills",
 
-        "TECHNICAL SKILLS",
+            "technical skills",
 
-        "CORE SKILLS"
+            "tools",
+
+            "technology"
 
         ]
 
     )
 
 
-    data["skills"]=[
-
-        s.strip()
-
-        for s in re.split(
-
-            ",|\n|\|",
-
-            skills
-
-        )
-
-        if s.strip()
-
-    ]
-
+    data["skills"]=clean_list(skills)
 
 
 
@@ -212,19 +339,19 @@ def parse_resume(text):
     # Experience
 
 
-    exp=section_extract(
+    exp_lines=find_section(
 
         text,
 
         [
 
-        "EXPERIENCE",
+            "experience",
 
-        "PROFESSIONAL EXPERIENCE",
+            "professional experience",
 
-        "WORK EXPERIENCE",
+            "work experience",
 
-        "EMPLOYMENT"
+            "employment"
 
         ]
 
@@ -232,81 +359,86 @@ def parse_resume(text):
 
 
 
-    exp_lines=[
-
-        x.strip()
-
-        for x in exp.split("\n")
-
-        if x.strip()
-
-    ]
+    experience=[]
 
 
+    current={}
 
-    bullets=[]
 
 
     for line in exp_lines:
 
 
+
         if (
 
-            line.startswith("•")
+            "role:" in line.lower()
 
             or
 
-            line.startswith("-")
+            "designation:" in line.lower()
 
         ):
 
-            bullets.append(
 
-                line.replace(
+            if current:
 
-                    "•",""
-
-                ).replace(
-
-                    "-",""
-
-                ).strip()
-
-            )
+                experience.append(current)
 
 
 
+            current={
+
+                "role":
+
+                line.split(":")[-1].strip(),
+
+                "company":"",
+
+                "duration":"",
+
+                "responsibilities":[]
+
+            }
 
 
-    data["experience"]=[
 
-        {
-
-        "role":exp_lines[0] if exp_lines else "",
+        elif "client:" in line.lower():
 
 
-        "company":exp_lines[1] if len(exp_lines)>1 else "",
+            current["company"]=line.split(":")[-1].strip()
 
 
-        "location":"",
+
+        elif "duration:" in line.lower():
 
 
-        "dates":"",
+            current["duration"]=line.split(":")[-1].strip()
 
 
-        "bullet1":bullets[0] if len(bullets)>0 else "",
+
+        else:
 
 
-        "bullet2":bullets[1] if len(bullets)>1 else "",
+            if current:
 
 
-        "bullet3":bullets[2] if len(bullets)>2 else ""
+                current["responsibilities"].append(
 
-        }
+                    line
 
-    ]
+                )
 
 
+
+
+    if current:
+
+        experience.append(current)
+
+
+
+    data["experience"]=experience
 
 
 
@@ -316,43 +448,32 @@ def parse_resume(text):
     # Education
 
 
-    edu=section_extract(
+    education=find_section(
 
         text,
 
         [
 
-        "EDUCATION",
+            "education",
 
-        "ACADEMIC QUALIFICATION"
+            "qualification",
+
+            "academic"
 
         ]
 
     )
 
 
-
-    edu_lines=edu.split("\n")
-
-
-
     data["education"]=[
 
         {
 
-        "degree":
+            "degree":education[0] if education else "",
 
-        edu_lines[0] if edu_lines else "",
+            "university":education[1] if len(education)>1 else "",
 
-
-        "university":
-
-        edu_lines[1] if len(edu_lines)>1 else "",
-
-
-        "year":
-
-        edu_lines[2] if len(edu_lines)>2 else ""
+            "year":""
 
         }
 
@@ -367,15 +488,15 @@ def parse_resume(text):
     # Projects
 
 
-    projects=section_extract(
+    projects=find_section(
 
         text,
 
         [
 
-        "PROJECTS",
+            "project",
 
-        "PROJECT"
+            "projects"
 
         ]
 
@@ -387,17 +508,17 @@ def parse_resume(text):
 
         {
 
-        "name":
+            "name":
 
-        projects.split("\n")[0] if projects else "",
+            p,
 
+            "description":"",
 
-        "description":projects,
-
-
-        "link":""
+            "link":""
 
         }
+
+        for p in projects
 
     ]
 
@@ -409,22 +530,22 @@ def parse_resume(text):
     # Certifications
 
 
-    cert=section_extract(
+    cert=find_section(
 
         text,
 
         [
 
-        "CERTIFICATION",
+            "certification",
 
-        "CERTIFICATIONS"
+            "certifications"
 
         ]
 
     )
 
 
-    data["certifications"]=cert.split("\n") if cert else []
+    data["certifications"]=cert
 
 
 
@@ -434,24 +555,19 @@ def parse_resume(text):
     # Achievements
 
 
-    ach=section_extract(
+    data["achievements"]=find_section(
 
         text,
 
         [
 
-        "ACHIEVEMENTS",
+            "achievement",
 
-        "ACCOMPLISHMENTS"
+            "award"
 
         ]
 
     )
-
-
-    data["achievements"]=ach.split("\n") if ach else []
-
-
 
 
 
