@@ -2,42 +2,21 @@ import streamlit as st
 import os
 
 
-# -------------------------------
-# Page Config
-# -------------------------------
-
 st.set_page_config(
-
     page_title="Upload Resume",
-
     page_icon="📄",
-
     layout="wide"
-
 )
 
-
-
-# -------------------------------
-# Theme CSS
-# -------------------------------
 
 from utils.theme import load_css
 
 load_css()
 
 
-
-# -------------------------------
-# Imports
-# -------------------------------
-
 from utils.resume_parser import (
-
     extract_resume_text,
-
     parse_resume
-
 )
 
 
@@ -47,43 +26,30 @@ from ai.resume_optimizer import optimize_resume
 
 
 
-# -------------------------------
-# Hero Section
-# -------------------------------
+# -------------------------
+# Hero Image
+# -------------------------
 
-hero_path = "assets/resume_hero.png"
+hero = "assets/resume_hero.png"
 
 
-if os.path.exists(hero_path):
-
+if os.path.exists(hero):
 
     st.image(
-
-        hero_path,
-
+        hero,
         use_container_width=True
-
     )
 
 
 
-st.markdown(
+st.title(
+    "📄 Upload Resume"
+)
 
-"""
-# 📄 AI Resume Builder
 
-Upload your existing resume and generate a professional ATS optimized resume.
 
-Features:
-
-✅ Resume parsing  
-✅ AI improvement  
-✅ ATS scoring  
-✅ Premium templates  
-✅ DOCX/PDF download
-
-"""
-
+st.write(
+    "Upload your existing resume and generate a premium ATS resume."
 )
 
 
@@ -94,22 +60,15 @@ st.divider()
 
 
 
-# -------------------------------
-# Upload Resume
-# -------------------------------
-
 
 uploaded_file = st.file_uploader(
 
-    "Upload your Resume (DOCX)",
+    "Upload DOCX Resume",
 
-    type=[
-
-        "docx"
-
-    ]
+    type=["docx"]
 
 )
+
 
 
 
@@ -118,46 +77,35 @@ uploaded_file = st.file_uploader(
 if uploaded_file:
 
 
-
-    with st.spinner(
-
-        "Reading resume..."
-
-    ):
-
-
-
-        # Extract text
+    with st.spinner("Processing resume..."):
 
 
         resume_text = extract_resume_text(
-
             uploaded_file
-
         )
 
 
-
-        # Parse details
-
-
-        resume_data["job_title"]=""
-
-        resume_data["location"]=""
-
-        resume_data["experience"] = resume_data.get(
-        "experience",
-        []
+        resume_data = parse_resume(
+            resume_text
         )
 
-       resume_data["projects"] = resume_data.get(
-        "projects",
-       []
-       )
+
+        # Required template fields
+
+        resume_data["job_title"] = ""
+
+        resume_data["location"] = ""
 
 
+        if "experience" not in resume_data:
 
-        # Save session
+            resume_data["experience"] = []
+
+
+        if "projects" not in resume_data:
+
+            resume_data["projects"] = []
+
 
 
         st.session_state["resume_text"] = resume_text
@@ -167,15 +115,8 @@ if uploaded_file:
 
 
 
-        st.session_state["uploaded"] = True
-
-
-
-
     st.success(
-
-        "Resume uploaded and analyzed successfully"
-
+        "Resume processed successfully"
     )
 
 
@@ -184,20 +125,9 @@ if uploaded_file:
 
 
 
-
-
-
-    # -------------------------------
-    # Show Extracted Information
-    # -------------------------------
-
-
     st.subheader(
-
-        "Extracted Resume Details"
-
+        "Extracted Details"
     )
-
 
 
     col1,col2 = st.columns(2)
@@ -208,57 +138,33 @@ if uploaded_file:
 
 
         st.write(
-
-            "### Personal Information"
-
+            "Name"
         )
 
 
         st.write(
 
-            "Name:",
-
             resume_data.get(
-
                 "name",
-
                 ""
-
             )
 
         )
 
 
         st.write(
+            "Email"
+        )
 
-            "Email:",
+
+        st.write(
 
             resume_data.get(
-
                 "email",
-
                 ""
-
             )
 
         )
-
-
-        st.write(
-
-            "Phone:",
-
-            resume_data.get(
-
-                "phone",
-
-                ""
-
-            )
-
-        )
-
-
 
 
 
@@ -266,171 +172,55 @@ if uploaded_file:
 
 
         st.write(
+            "Skills"
+        )
 
-            "### Skills"
+
+        st.write(
+
+            resume_data.get(
+                "skills",
+                []
+            )
 
         )
 
 
-        skills = resume_data.get(
 
-            "skills",
 
-            []
+    st.divider()
+
+
+
+    if st.button(
+        "✨ Optimize Resume"
+    ):
+
+
+        optimized = optimize_resume(
+
+            resume_data
 
         )
 
 
-        if skills:
+        if optimized:
 
 
-            for skill in skills:
+            st.session_state["resume_data"] = optimized
 
 
-                st.write(
-
-                    "✔",
-
-                    skill
-
-                )
-
+            st.success(
+                "Optimization completed"
+            )
 
 
         else:
 
 
-            st.write(
-
-                "No skills detected"
-
+            st.info(
+                "Using original resume data"
             )
-
-
-
-
-
-    st.divider()
-
-
-
-
-
-    # -------------------------------
-    # AI Optimization
-    # -------------------------------
-
-
-    st.subheader(
-
-        "AI Resume Optimization"
-
-    )
-
-
-
-    if st.button(
-
-        "✨ Optimize Resume"
-
-    ):
-
-
-
-        with st.spinner(
-
-            "Optimizing..."
-
-        ):
-
-
-
-            optimized = optimize_resume(
-
-                resume_data
-
-            )
-
-
-
-            if optimized:
-
-
-                st.session_state["resume_data"] = optimized
-
-
-
-                st.success(
-
-                    "Resume optimized"
-
-                )
-
-
-            else:
-
-
-                st.info(
-
-                    "Using original resume data"
-
-                )
-
-
-
-
-
-    st.divider()
-
-
-
-
-
-    # -------------------------------
-    # Preview
-    # -------------------------------
-
-
-    st.subheader(
-
-        "Resume Preview"
-
-    )
-
-
-    final_data = st.session_state.get(
-
-        "resume_data",
-
-        resume_data
-
-    )
-
-
-
-    with st.expander(
-
-        "View Resume Data"
-
-    ):
-
-
-        st.json(
-
-            final_data
-
-        )
-
-
-
-
-
-    st.success(
-
-        "Ready for template generation"
-
-    )
-
 
 
 
@@ -438,7 +228,5 @@ else:
 
 
     st.info(
-
-        "Please upload your resume to continue"
-
-    )
+        "Please upload resume file"
+   
