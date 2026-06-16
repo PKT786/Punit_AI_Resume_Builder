@@ -1,58 +1,46 @@
 from docx import Document
-import os
 import tempfile
+import os
 
 
+def replace_all(paragraph, mapping):
 
-def replace_paragraph(paragraph, mapping):
-
-    full_text = ""
-
-    for run in paragraph.runs:
-        full_text += run.text
-
-
-    updated = full_text
-
+    text = paragraph.text
 
     for key,value in mapping.items():
 
         if value is None:
-            value = ""
+            value=""
 
-        updated = updated.replace(
+        text=text.replace(
             key,
             str(value)
         )
 
 
-    if updated != full_text:
+    # remove remaining placeholders
+
+    import re
+
+    text=re.sub(
+
+        r"\{\{.*?\}\}",
+
+        "",
+
+        text
+
+    )
 
 
-        for run in paragraph.runs:
-            run.text=""
+    for run in paragraph.runs:
+
+        run.text=""
 
 
-        if paragraph.runs:
-            paragraph.runs[0].text = updated
+    if paragraph.runs:
 
-
-
-
-def replace_table(table,mapping):
-
-
-    for row in table.rows:
-
-        for cell in row.cells:
-
-            for paragraph in cell.paragraphs:
-
-                replace_paragraph(
-                    paragraph,
-                    mapping
-                )
-
+        paragraph.runs[0].text=text
 
 
 
@@ -64,29 +52,41 @@ def build_mapping(data):
 
 
 
-    # Simple fields
+    # normal fields
 
-    for key,value in data.items():
+    fields=[
+
+        "name",
+        "job_title",
+        "email",
+        "phone",
+        "location",
+        "linkedin",
+        "github",
+        "summary"
+
+    ]
 
 
-        if not isinstance(value,(list,dict)):
+
+    for f in fields:
 
 
-            mapping[
+        mapping[
 
-            "{{"+key.upper()+"}}"
+        "{{"+f.upper()+"}}"
 
-            ] = value
-
-
+        ]=data.get(f,"")
 
 
-    # Skills
 
-    mapping["{{SKILLS}}"] = ", ".join(
+
+    mapping["{{SKILLS}}"]=", ".join(
 
         data.get(
+
             "skills",
+
             []
 
         )
@@ -96,50 +96,104 @@ def build_mapping(data):
 
 
 
+    # Experience
+
+    experiences=data.get(
+
+        "experience",
+
+        []
+
+    )
+
+
+
+    for i in range(1,6):
+
+
+        exp={}
+
+
+
+        if i <= len(experiences):
+
+            exp=experiences[i-1]
+
+
+
+        for key in [
+
+            "role",
+
+            "company",
+
+            "location",
+
+            "dates",
+
+            "bullet1",
+
+            "bullet2",
+
+            "bullet3"
+
+        ]:
+
+
+            mapping[
+
+            f"{{{{EXPERIENCE.{i}.{key.upper()}}}}}"
+
+            ] = exp.get(key,"")
+
+
+
+
+
+
+
     # Education
 
 
-    for i,item in enumerate(
+    edu=data.get(
 
-        data.get("education",[]),
+        "education",
 
-        1
+        []
 
-    ):
-
-
-        for k,v in item.items():
-
-
-            mapping[
-
-            f"{{{{EDUCATION.{i}.{k.upper()}}}}}"
-
-            ] = v
+    )
 
 
 
-
-    # Experience
-
-
-    for i,item in enumerate(
-
-        data.get("experience",[]),
-
-        1
-
-    ):
+    first={}
 
 
-        for k,v in item.items():
+    if edu:
+
+        first=edu[0]
 
 
-            mapping[
 
-            f"{{{{EXPERIENCE.{i}.{k.upper()}}}}}"
+    for key in [
 
-            ] = v
+        "degree",
+
+        "university",
+
+        "year"
+
+    ]:
+
+
+        mapping[
+
+        f"{{{{EDUCATION.1.{key.upper()}}}}}"
+
+        ] = first.get(key,"")
+
+
+
+
 
 
 
@@ -147,29 +201,61 @@ def build_mapping(data):
     # Projects
 
 
-    for i,item in enumerate(
+    projects=data.get(
 
-        data.get("projects",[]),
+        "projects",
 
-        1
+        []
 
-    ):
+    )
 
 
-        for k,v in item.items():
+
+    for i in range(1,6):
+
+
+        project={}
+
+
+        if i <= len(projects):
+
+            project=projects[i-1]
+
+
+
+        for key in [
+
+            "name",
+
+            "description",
+
+            "link"
+
+        ]:
 
 
             mapping[
 
-            f"{{{{PROJECTS.{i}.{k.upper()}}}}}"
+            f"{{{{PROJECTS.{i}.{key.upper()}}}}}"
 
-            ] = v
-
-
+            ] = project.get(key,"")
 
 
 
-    # Achievements
+
+
+
+    mapping["{{CERTIFICATIONS}}"] = "\n".join(
+
+        data.get(
+
+            "certifications",
+
+            []
+
+        )
+
+    )
 
 
     mapping["{{ACHIEVEMENTS}}"] = "\n".join(
@@ -186,26 +272,7 @@ def build_mapping(data):
 
 
 
-
-    # Certifications
-
-
-    mapping["{{CERTIFICATIONS}}"] = "\n".join(
-
-        data.get(
-
-            "certifications",
-
-            []
-
-        )
-
-    )
-
-
-
     return mapping
-
 
 
 
@@ -214,7 +281,7 @@ def build_mapping(data):
 def create_docx(template_name,resume_data):
 
 
-    template_path=os.path.join(
+    path=os.path.join(
 
         "templates",
 
@@ -223,19 +290,7 @@ def create_docx(template_name,resume_data):
     )
 
 
-    if not os.path.exists(template_path):
-
-        raise FileNotFoundError(
-            template_path
-        )
-
-
-
-    doc=Document(
-
-        template_path
-
-    )
+    doc=Document(path)
 
 
 
@@ -247,11 +302,12 @@ def create_docx(template_name,resume_data):
 
 
 
-    for paragraph in doc.paragraphs:
+    for p in doc.paragraphs:
 
-        replace_paragraph(
 
-            paragraph,
+        replace_all(
+
+            p,
 
             mapping
 
@@ -261,13 +317,23 @@ def create_docx(template_name,resume_data):
 
     for table in doc.tables:
 
-        replace_table(
 
-            table,
+        for row in table.rows:
 
-            mapping
 
-        )
+            for cell in row.cells:
+
+
+                for p in cell.paragraphs:
+
+
+                    replace_all(
+
+                        p,
+
+                        mapping
+
+                    )
 
 
 
