@@ -12,7 +12,10 @@ st.title(
 import streamlit as st
 
 
-from utils.resume_parser import extract_resume
+from utils.resume_parser import (
+    extract_resume_text,
+    parse_resume
+)
 
 from utils.ats_checker import calculate_ats_score
 
