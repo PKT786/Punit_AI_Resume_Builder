@@ -1,34 +1,23 @@
 import streamlit as st
 
+
 from utils.theme import load_css
 
 
 load_css()
 
 
-st.title(
-"AI Resume Builder"
-)
-import streamlit as st
 
 from utils.resume_parser import (
     extract_resume_text,
     parse_resume
 )
+
+
 from utils.ats_checker import calculate_ats_score
 
+
 from ai.resume_optimizer import optimize_resume
-from utils.ui_components import hero_section
-
-hero_section(
-
-"upload_resume.png",
-
-"Upload Existing Resume",
-
-"Analyze, improve and convert your resume into professional format"
-
-)
 
 
 
@@ -44,32 +33,34 @@ st.set_page_config(
 
 
 
-st.title("📂 Upload Existing Resume")
+st.title(
+    "📂 Upload Existing Resume"
+)
+
+
 
 st.write(
-
 """
 Upload your existing resume.
 
-System will:
+The system will:
 
-✔ Extract information
+✔ Extract resume information
 
 ✔ Check ATS score
 
-✔ Optimize using AI (optional)
+✔ Prepare resume for templates
 
-✔ Prepare it for templates
+✔ Generate DOCX/PDF
 
 """
-
 )
 
 
 
 uploaded_file = st.file_uploader(
 
-    "Upload DOCX Resume",
+    "Upload Resume",
 
     type=["docx"]
 
@@ -80,44 +71,24 @@ uploaded_file = st.file_uploader(
 if uploaded_file:
 
 
-
     st.success(
-
         "Resume uploaded successfully"
-
     )
 
 
-    # -------------------------
-    # Extract Resume Text
-    # -------------------------
-
+    # Extract text
 
     resume_text = extract_resume_text(
-    uploaded_file
-)
-    resume_data = parse_resume(
-    resume_text
-)
 
-
-st.session_state["resume"] = resume_data
-
-
-
-    st.subheader(
-
-        "📄 Extracted Resume Content"
+        uploaded_file
 
     )
+
 
 
     with st.expander(
-
-        "View Extracted Text"
-
+        "View Extracted Resume"
     ):
-
 
         st.write(
 
@@ -127,10 +98,23 @@ st.session_state["resume"] = resume_data
 
 
 
-    # -------------------------
-    # ATS Score
-    # -------------------------
+    # Parse data
 
+    resume_data = parse_resume(
+
+        resume_text
+
+    )
+
+
+
+    # Save session
+
+    st.session_state["resume"] = resume_data
+
+
+
+    # ATS Analysis
 
     ats_result = calculate_ats_score(
 
@@ -139,15 +123,18 @@ st.session_state["resume"] = resume_data
     )
 
 
+    st.session_state["ats_result"] = ats_result
+
+
+
     st.divider()
 
 
 
     st.subheader(
-
         "📊 ATS Score"
-
     )
+
 
 
     st.metric(
@@ -160,116 +147,43 @@ st.session_state["resume"] = resume_data
 
 
 
-    if ats_result["score"] >= 80:
-
-
-        st.success(
-
-            "Excellent ATS compatibility"
-
-        )
-
-
-    elif ats_result["score"] >= 60:
-
-
-        st.warning(
-
-            "Resume can be improved"
-
-        )
-
-
-    else:
-
-
-        st.error(
-
-            "Resume needs optimization"
-
-        )
-
-
-
-    st.write(
-
-        "Suggestions"
-
-    )
-
-
-    for s in ats_result["suggestions"]:
+    for item in ats_result["suggestions"]:
 
 
         st.write(
 
-            "• " + s
+            "• " + item
 
         )
 
 
 
-    # -------------------------
-    # Prepare Resume Data
-    # -------------------------
+    st.divider()
 
-
-    resume_data = {
-
-
-        "name":"",
-
-        "job_title":"",
-
-        "email":"",
-
-        "phone":"",
-
-        "summary":resume_text[:500],
-
-
-        "skills":"",
-
-        "experience":resume_text,
-
-
-        "education":""
-
-
-
-    }
-
-
-
-    # -------------------------
-    # AI Optimization
-    # -------------------------
 
 
     if st.button(
 
-        "🤖 Optimize With AI"
+        "🤖 Optimize Resume With AI"
 
     ):
 
 
-
         with st.spinner(
 
-            "AI improving resume..."
+            "Improving resume..."
 
         ):
 
 
             optimized = optimize_resume(
 
-                resume_text
+                resume_data
 
             )
 
 
-
-            resume_data["summary"] = optimized
+            st.session_state["resume"] = optimized
 
 
 
@@ -281,31 +195,8 @@ st.session_state["resume"] = resume_data
 
 
 
-    else:
-
-
-        st.info(
-
-            "Using extracted resume data"
-
-        )
-
-
-
-    # -------------------------
-    # SESSION STORAGE
-    # -------------------------
-
-
-    st.session_state["resume_data"] = resume_data
-
-
-    st.session_state["ats_result"] = ats_result
-
-
-
     st.success(
 
-        "Resume data saved. Go to Download page."
+        "Resume data saved successfully. Go to Download page."
 
-    )
+ 
