@@ -1,6 +1,6 @@
+streamlit
 python-docx
+openai
 PyPDF2
 docx2pdf
-openai
-streamlit
 pandas
