@@ -1,59 +1,75 @@
 from docx import Document
+from docx.shared import Pt, Inches
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.section import WD_SECTION
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 import tempfile
-import os
+
+
+
+
+def add_heading(doc,text):
+
+    p = doc.add_paragraph()
+
+    run = p.add_run(text)
+
+    run.bold=True
+
+    run.font.size=Pt(14)
+
+    return p
 
 
 
 
 
-def replace_all(doc,mapping):
+def add_text(doc,text):
 
+    p=doc.add_paragraph()
 
-    for p in doc.paragraphs:
+    p.add_run(
 
+        text
 
-        for key,value in mapping.items():
+    )
 
-
-            if key in p.text:
-
-
-                p.text=p.text.replace(
-
-                    key,
-
-                    value
-
-                )
+    return p
 
 
 
 
-    for table in doc.tables:
+
+def add_bullet(doc,text):
+
+    p=doc.add_paragraph(
+
+        style="List Bullet"
+
+    )
+
+    p.add_run(
+
+        text
+
+    )
 
 
-        for row in table.rows:
 
 
-            for cell in row.cells:
 
 
-                for p in cell.paragraphs:
+def add_line(doc):
 
 
-                    for key,value in mapping.items():
+    p=doc.add_paragraph()
 
+    p.add_run(
 
-                        if key in p.text:
+        "________________________________"
 
-
-                            p.text=p.text.replace(
-
-                                key,
-
-                                value
-
-                            )
+    )
 
 
 
@@ -63,98 +79,544 @@ def replace_all(doc,mapping):
 def create_docx(template_name,data):
 
 
-    template=os.path.join(
+    """
+    Dynamic Resume Generator
 
-        "templates",
+    Does not depend on placeholders
+    """
 
-        template_name
+
+    doc=Document()
+
+
+
+    # -------------------
+    # Margins
+    # -------------------
+
+    section=doc.sections[0]
+
+
+    section.top_margin=Inches(0.5)
+
+    section.bottom_margin=Inches(0.5)
+
+    section.left_margin=Inches(0.6)
+
+    section.right_margin=Inches(0.6)
+
+
+
+
+
+    # -------------------
+    # Header
+    # -------------------
+
+
+    name=data.get(
+
+        "name",
+
+        ""
 
     )
 
 
-    doc=Document(template)
+    p=doc.add_paragraph()
+
+
+    p.alignment=WD_ALIGN_PARAGRAPH.CENTER
+
+
+    r=p.add_run(name)
+
+
+    r.bold=True
+
+    r.font.size=Pt(20)
 
 
 
 
 
-    mapping={
+    title=data.get(
+
+        "job_title",
+
+        ""
+
+    )
 
 
-    "{{NAME}}":data.get("name",""),
+    p=doc.add_paragraph()
 
-    "{{JOB_TITLE}}":data.get("job_title",""),
 
-    "{{EMAIL}}":data.get("email",""),
+    p.alignment=WD_ALIGN_PARAGRAPH.CENTER
 
-    "{{PHONE}}":data.get("phone",""),
 
-    "{{LOCATION}}":data.get("location",""),
+    r=p.add_run(title)
 
-    "{{LINKEDIN}}":data.get("linkedin",""),
 
-    "{{GITHUB}}":data.get("github",""),
-
-    "{{SUMMARY}}":data.get("summary",""),
-
-    "{{SKILLS}}":data.get("skills","")
-
-    }
+    r.font.size=Pt(12)
 
 
 
 
-    exp=data["experience"][0]
 
 
 
-    mapping.update({
-
-    "{{EXPERIENCE.1.ROLE}}":exp.get("role",""),
-
-    "{{EXPERIENCE.1.COMPANY}}":exp.get("company",""),
-
-    "{{EXPERIENCE.1.DATES}}":exp.get("dates",""),
-
-    "{{EXPERIENCE.1.LOCATION}}":exp.get("location",""),
-
-    "{{EXPERIENCE.1.BULLET1}}":exp.get("bullet1",""),
-
-    "{{EXPERIENCE.1.BULLET2}}":exp.get("bullet2",""),
-
-    "{{EXPERIENCE.1.BULLET3}}":exp.get("bullet3","")
-
-    })
+    contact=[]
 
 
+    for key in [
+
+        "email",
+
+        "phone",
+
+        "location",
+
+        "linkedin"
+
+    ]:
 
 
-    project=data["projects"][0]
+        if data.get(key):
 
+            contact.append(
 
+                data[key]
 
-    mapping.update({
-
-    "{{PROJECTS.1.NAME}}":project.get("name",""),
-
-    "{{PROJECTS.1.DESCRIPTION}}":project.get("description",""),
-
-    "{{PROJECTS.1.LINK}}":project.get("link","")
-
-    })
+            )
 
 
 
+    if contact:
 
-    replace_all(
+
+        p=doc.add_paragraph()
+
+
+        p.alignment=WD_ALIGN_PARAGRAPH.CENTER
+
+
+        p.add_run(
+
+            " | ".join(contact)
+
+        )
+
+
+
+
+
+
+    # -------------------
+    # Summary
+    # -------------------
+
+
+    add_heading(
 
         doc,
 
-        mapping
+        "PROFESSIONAL SUMMARY"
 
     )
 
 
+    add_text(
+
+        doc,
+
+        data.get(
+
+            "summary",
+
+            ""
+
+        )
+
+    )
+
+
+
+
+
+
+
+    # -------------------
+    # Skills
+    # -------------------
+
+
+    add_heading(
+
+        doc,
+
+        "CORE SKILLS"
+
+    )
+
+
+    skills=data.get(
+
+        "skills",
+
+        []
+
+    )
+
+
+    if isinstance(skills,list):
+
+
+        add_text(
+
+            doc,
+
+            ", ".join(skills)
+
+        )
+
+
+    else:
+
+
+        add_text(
+
+            doc,
+
+            skills
+
+        )
+
+
+
+
+
+
+    # -------------------
+    # Experience
+    # -------------------
+
+
+    add_heading(
+
+        doc,
+
+        "PROFESSIONAL EXPERIENCE"
+
+    )
+
+
+
+    experiences=data.get(
+
+        "experience",
+
+        []
+
+    )
+
+
+
+    for exp in experiences:
+
+
+        p=doc.add_paragraph()
+
+
+
+        r=p.add_run(
+
+            exp.get(
+
+                "role",
+
+                ""
+
+            )
+
+        )
+
+
+        r.bold=True
+
+
+
+        p.add_run(
+
+            " | "
+
+            +
+
+            exp.get(
+
+                "company",
+
+                ""
+
+            )
+
+        )
+
+
+
+
+        if exp.get("duration"):
+
+
+            add_text(
+
+                doc,
+
+                exp["duration"]
+
+            )
+
+
+
+
+
+        bullets=exp.get(
+
+            "responsibilities",
+
+            []
+
+        )
+
+
+
+        for b in bullets:
+
+
+            add_bullet(
+
+                doc,
+
+                b
+
+            )
+
+
+
+
+
+
+    # -------------------
+    # Education
+    # -------------------
+
+
+    add_heading(
+
+        doc,
+
+        "EDUCATION"
+
+    )
+
+
+
+    for edu in data.get(
+
+        "education",
+
+        []
+
+    ):
+
+
+
+        add_text(
+
+            doc,
+
+            edu.get(
+
+                "degree",
+
+                ""
+
+            )
+
+        )
+
+
+
+        add_text(
+
+            doc,
+
+            edu.get(
+
+                "university",
+
+                ""
+
+            )
+
+        )
+
+
+
+        add_text(
+
+            doc,
+
+            edu.get(
+
+                "year",
+
+                ""
+
+            )
+
+        )
+
+
+
+
+
+
+    # -------------------
+    # Projects
+    # -------------------
+
+
+    add_heading(
+
+        doc,
+
+        "PROJECTS"
+
+    )
+
+
+
+    for project in data.get(
+
+        "projects",
+
+        []
+
+    ):
+
+
+
+        add_text(
+
+            doc,
+
+            project.get(
+
+                "name",
+
+                ""
+
+            )
+
+        )
+
+
+
+        add_text(
+
+            doc,
+
+            project.get(
+
+                "description",
+
+                ""
+
+            )
+
+        )
+
+
+
+
+
+
+
+    # -------------------
+    # Certifications
+    # -------------------
+
+
+    add_heading(
+
+        doc,
+
+        "CERTIFICATIONS"
+
+    )
+
+
+
+    for c in data.get(
+
+        "certifications",
+
+        []
+
+    ):
+
+
+        add_bullet(
+
+            doc,
+
+            c
+
+        )
+
+
+
+
+
+
+    # -------------------
+    # Achievements
+    # -------------------
+
+
+    add_heading(
+
+        doc,
+
+        "ACHIEVEMENTS"
+
+    )
+
+
+
+    for a in data.get(
+
+        "achievements",
+
+        []
+
+    ):
+
+
+        add_bullet(
+
+            doc,
+
+            a
+
+        )
+
+
+
+
+
+    # Save
 
 
     output=tempfile.NamedTemporaryFile(
@@ -167,7 +629,11 @@ def create_docx(template_name,data):
 
 
 
-    doc.save(output.name)
+    doc.save(
+
+        output.name
+
+    )
 
 
 
