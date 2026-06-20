@@ -1,315 +1,172 @@
 from docx import Document
-from docx.shared import Pt, Inches
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.section import WD_SECTION
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
 import tempfile
+import os
+import re
 
 
 
+def replace_text(doc, mapping):
 
-def add_heading(doc,text):
 
-    p = doc.add_paragraph()
+    for paragraph in doc.paragraphs:
 
-    run = p.add_run(text)
 
-    run.bold=True
+        for key,value in mapping.items():
 
-    run.font.size=Pt(14)
 
-    return p
+            if key in paragraph.text:
 
 
+                paragraph.text = paragraph.text.replace(
 
+                    key,
 
+                    value
 
-def add_text(doc,text):
+                )
 
-    p=doc.add_paragraph()
 
-    p.add_run(
 
-        text
 
-    )
+    for table in doc.tables:
 
-    return p
 
+        for row in table.rows:
 
 
+            for cell in row.cells:
 
 
-def add_bullet(doc,text):
+                for paragraph in cell.paragraphs:
 
-    p=doc.add_paragraph(
 
-        style="List Bullet"
+                    for key,value in mapping.items():
 
-    )
 
-    p.add_run(
+                        if key in paragraph.text:
 
-        text
 
-    )
+                            paragraph.text = paragraph.text.replace(
 
+                                key,
 
+                                value
 
+                            )
 
 
 
-def add_line(doc):
 
 
-    p=doc.add_paragraph()
+def remove_unused_placeholders(doc):
 
-    p.add_run(
 
-        "________________________________"
+    pattern=r"\{\{.*?\}\}"
 
-    )
 
 
+    for paragraph in doc.paragraphs:
 
 
+        if re.search(pattern,paragraph.text):
 
 
-def create_docx(template_name,data):
+            paragraph.text=re.sub(
 
+                pattern,
 
-    """
-    Dynamic Resume Generator
+                "",
 
-    Does not depend on placeholders
-    """
-
-
-    doc=Document()
-
-
-
-    # -------------------
-    # Margins
-    # -------------------
-
-    section=doc.sections[0]
-
-
-    section.top_margin=Inches(0.5)
-
-    section.bottom_margin=Inches(0.5)
-
-    section.left_margin=Inches(0.6)
-
-    section.right_margin=Inches(0.6)
-
-
-
-
-
-    # -------------------
-    # Header
-    # -------------------
-
-
-    name=data.get(
-
-        "name",
-
-        ""
-
-    )
-
-
-    p=doc.add_paragraph()
-
-
-    p.alignment=WD_ALIGN_PARAGRAPH.CENTER
-
-
-    r=p.add_run(name)
-
-
-    r.bold=True
-
-    r.font.size=Pt(20)
-
-
-
-
-
-    title=data.get(
-
-        "job_title",
-
-        ""
-
-    )
-
-
-    p=doc.add_paragraph()
-
-
-    p.alignment=WD_ALIGN_PARAGRAPH.CENTER
-
-
-    r=p.add_run(title)
-
-
-    r.font.size=Pt(12)
-
-
-
-
-
-
-
-    contact=[]
-
-
-    for key in [
-
-        "email",
-
-        "phone",
-
-        "location",
-
-        "linkedin"
-
-    ]:
-
-
-        if data.get(key):
-
-            contact.append(
-
-                data[key]
+                paragraph.text
 
             )
 
 
 
-    if contact:
 
+    for table in doc.tables:
 
-        p=doc.add_paragraph()
 
+        for row in table.rows:
 
-        p.alignment=WD_ALIGN_PARAGRAPH.CENTER
 
+            for cell in row.cells:
 
-        p.add_run(
 
-            " | ".join(contact)
+                for paragraph in cell.paragraphs:
 
-        )
 
+                    paragraph.text=re.sub(
 
+                        pattern,
 
+                        "",
 
+                        paragraph.text
 
+                    )
 
-    # -------------------
-    # Summary
-    # -------------------
 
 
-    add_heading(
 
-        doc,
 
-        "PROFESSIONAL SUMMARY"
 
-    )
 
+def create_mapping(data):
 
-    add_text(
 
-        doc,
+    mapping={
 
-        data.get(
 
-            "summary",
 
-            ""
+    "{{NAME}}":
+    data.get("name",""),
 
-        )
 
-    )
 
+    "{{JOB_TITLE}}":
+    data.get("job_title",""),
 
 
 
+    "{{EMAIL}}":
+    data.get("email",""),
 
 
 
-    # -------------------
-    # Skills
-    # -------------------
+    "{{PHONE}}":
+    data.get("phone",""),
 
 
-    add_heading(
 
-        doc,
+    "{{LOCATION}}":
+    data.get("location",""),
 
-        "CORE SKILLS"
 
-    )
 
+    "{{LINKEDIN}}":
+    data.get("linkedin",""),
 
-    skills=data.get(
 
-        "skills",
 
-        []
+    "{{GITHUB}}":
+    data.get("github",""),
 
-    )
 
 
-    if isinstance(skills,list):
+    "{{SUMMARY}}":
+    data.get("summary",""),
 
 
-        add_text(
 
-            doc,
+    "{{SKILLS}}":
+    ", ".join(data.get("skills",[]))
 
-            ", ".join(skills)
+    }
 
-        )
 
 
-    else:
-
-
-        add_text(
-
-            doc,
-
-            skills
-
-        )
-
-
-
-
-
-
-    # -------------------
     # Experience
-    # -------------------
-
-
-    add_heading(
-
-        doc,
-
-        "PROFESSIONAL EXPERIENCE"
-
-    )
-
 
 
     experiences=data.get(
@@ -321,42 +178,16 @@ def create_docx(template_name,data):
     )
 
 
-
-    for exp in experiences:
-
-
-        p=doc.add_paragraph()
+    for index,exp in enumerate(experiences,start=1):
 
 
-
-        r=p.add_run(
+        bullets="\n".join(
 
             exp.get(
 
-                "role",
+                "responsibilities",
 
-                ""
-
-            )
-
-        )
-
-
-        r.bold=True
-
-
-
-        p.add_run(
-
-            " | "
-
-            +
-
-            exp.get(
-
-                "company",
-
-                ""
+                []
 
             )
 
@@ -364,178 +195,74 @@ def create_docx(template_name,data):
 
 
 
+        mapping.update({
 
-        if exp.get("duration"):
 
 
-            add_text(
+        f"{{{{EXPERIENCE.{index}.ROLE}}}}":
 
-                doc,
+        exp.get("role",""),
 
-                exp["duration"]
 
-            )
 
+        f"{{{{EXPERIENCE.{index}.COMPANY}}}}":
 
+        exp.get("company",""),
 
 
 
-        bullets=exp.get(
+        f"{{{{EXPERIENCE.{index}.DURATION}}}}":
 
-            "responsibilities",
+        exp.get("duration",""),
 
-            []
 
-        )
 
+        f"{{{{EXPERIENCE.{index}.RESPONSIBILITIES}}}}":
 
+        bullets
 
-        for b in bullets:
 
 
-            add_bullet(
+        })
 
-                doc,
 
-                b
 
-            )
 
 
-
-
-
-
-    # -------------------
-    # Education
-    # -------------------
-
-
-    add_heading(
-
-        doc,
-
-        "EDUCATION"
-
-    )
-
-
-
-    for edu in data.get(
-
-        "education",
-
-        []
-
-    ):
-
-
-
-        add_text(
-
-            doc,
-
-            edu.get(
-
-                "degree",
-
-                ""
-
-            )
-
-        )
-
-
-
-        add_text(
-
-            doc,
-
-            edu.get(
-
-                "university",
-
-                ""
-
-            )
-
-        )
-
-
-
-        add_text(
-
-            doc,
-
-            edu.get(
-
-                "year",
-
-                ""
-
-            )
-
-        )
-
-
-
-
-
-
-    # -------------------
     # Projects
-    # -------------------
 
 
-    add_heading(
+    for index,p in enumerate(
 
-        doc,
+        data.get("projects",[]),
 
-        "PROJECTS"
-
-    )
-
-
-
-    for project in data.get(
-
-        "projects",
-
-        []
+        start=1
 
     ):
 
 
 
-        add_text(
-
-            doc,
-
-            project.get(
-
-                "name",
-
-                ""
-
-            )
-
-        )
+        mapping.update({
 
 
 
-        add_text(
+        f"{{{{PROJECTS.{index}.NAME}}}}":
 
-            doc,
+        p.get("name",""),
 
-            project.get(
 
-                "description",
 
-                ""
+        f"{{{{PROJECTS.{index}.DESCRIPTION}}}}":
 
-            )
+        p.get("description","")
 
-        )
+
+
+        })
+
+
+
+    return mapping
 
 
 
@@ -543,80 +270,44 @@ def create_docx(template_name,data):
 
 
 
-    # -------------------
-    # Certifications
-    # -------------------
+def create_docx(template_name,data):
 
 
-    add_heading(
 
-        doc,
+    template=os.path.join(
 
-        "CERTIFICATIONS"
+        "templates",
+
+        template_name
 
     )
 
 
 
-    for c in data.get(
-
-        "certifications",
-
-        []
-
-    ):
-
-
-        add_bullet(
-
-            doc,
-
-            c
-
-        )
+    doc=Document(template)
 
 
 
+    mapping=create_mapping(data)
 
 
 
-    # -------------------
-    # Achievements
-    # -------------------
-
-
-    add_heading(
+    replace_text(
 
         doc,
 
-        "ACHIEVEMENTS"
+        mapping
 
     )
 
 
 
-    for a in data.get(
+    remove_unused_placeholders(
 
-        "achievements",
+        doc
 
-        []
+    )
 
-    ):
-
-
-        add_bullet(
-
-            doc,
-
-            a
-
-        )
-
-
-
-
-
-    # Save
 
 
     output=tempfile.NamedTemporaryFile(
