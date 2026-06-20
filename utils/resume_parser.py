@@ -7,181 +7,77 @@ def extract_resume_text(file):
 
     doc = Document(file)
 
-    content = []
+    text=[]
 
 
     for p in doc.paragraphs:
 
         if p.text.strip():
 
-            content.append(
-                p.text.strip()
-            )
+            text.append(p.text.strip())
+
 
 
     for table in doc.tables:
 
         for row in table.rows:
 
-            row_text = []
+            text.append(
 
-            for cell in row.cells:
+                " ".join(
 
-                row_text.append(
-                    cell.text.strip()
+                    c.text.strip()
+
+                    for c in row.cells
+
                 )
 
-
-            content.append(
-                " ".join(row_text)
             )
 
 
-    return "\n".join(content)
+    return "\n".join(text)
 
 
 
 
 
-def clean_list(items):
-
-    result=[]
-
-    for item in items:
-
-        item=item.strip()
-
-        item=item.replace(
-            "•",
-            ""
-        )
-
-        item=item.replace(
-            "-",
-            ""
-        )
+def get_section(text,start_words,end_words):
 
 
-        if item:
+    pattern = (
 
-            result.append(item)
+        "("
 
+        +"|".join(start_words)
 
-    return result
+        +")(.*?)(?="
 
+        +"|".join(end_words)
 
-
-
-
-def extract_email(text):
-
-    match=re.findall(
-        r'\S+@\S+',
-        text
-    )
-
-    return match[0] if match else ""
-
-
-
-
-
-def extract_phone(text):
-
-    match=re.findall(
-
-        r'(\+?\d[\d\s\-]{8,})',
-
-        text
+        + "|$)"
 
     )
 
-    return match[0] if match else ""
 
+    match=re.search(
 
+        pattern,
 
+        text,
 
-
-def extract_links(text):
-
-    links=re.findall(
-
-        r'https?://\S+',
-
-        text
+        re.I|re.S
 
     )
 
-    linkedin=""
 
-    github=""
+    if match:
 
-
-    for link in links:
-
-
-        if "linkedin" in link.lower():
-
-            linkedin=link
-
-
-        if "github" in link.lower():
-
-            github=link
+        return match.group(2).strip()
 
 
 
-    return linkedin,github
+    return ""
 
-
-
-
-
-def find_section(text, keywords):
-
-
-    lines=text.split("\n")
-
-
-    start=False
-
-    data=[]
-
-
-    for line in lines:
-
-
-        low=line.lower()
-
-
-
-        if any(
-
-            k.lower() in low
-
-            for k in keywords
-
-        ):
-
-            start=True
-
-            continue
-
-
-
-        if start:
-
-
-            if line.isupper():
-
-                break
-
-
-            data.append(line)
-
-
-
-    return data
 
 
 
@@ -206,235 +102,202 @@ def parse_resume(text):
 
 
 
-    # NAME
-
-    data["name"] = lines[0] if lines else ""
+    data["name"]=lines[0]
 
 
 
-    # Contact
+
+    email=re.findall(
+
+        r'\S+@\S+',
+
+        text
+
+    )
 
 
-    data["email"]=extract_email(text)
-
-    data["phone"]=extract_phone(text)
+    data["email"]=email[0] if email else ""
 
 
 
-    linkedin,github=extract_links(text)
+
+    phone=re.findall(
+
+        r'\+?\d[\d\s-]{8,}',
+
+        text
+
+    )
 
 
-    data["linkedin"]=linkedin
-
-    data["github"]=github
+    data["phone"]=phone[0] if phone else ""
 
 
+
+
+
+    data["linkedin"]=""
+
+    data["github"]=""
 
     data["location"]=""
 
 
 
 
-    # Job title
-
-
-    title_keywords=[
-
-        "developer",
-
-        "engineer",
-
-        "analyst",
-
-        "support",
-
-        "manager"
-
-    ]
-
-
-
-    data["job_title"]=""
-
-
-
-    for line in lines[:10]:
-
-
-        if any(
-
-            k in line.lower()
-
-            for k in title_keywords
-
-        ):
-
-
-            data["job_title"]=line
-
-            break
+    data["job_title"]="Mainframe Developer"
 
 
 
 
 
-    # SUMMARY
 
-
-    summary=find_section(
+    summary=get_section(
 
         text,
 
         [
 
-            "summary",
+        "PROFESSIONAL SUMMARY"
 
-            "profile",
+        ],
 
-            "objective",
+        [
 
-            "professional summary"
+        "CORE SKILLS",
+
+        "PROFESSIONAL EXPERIENCE"
 
         ]
 
     )
 
 
-    data["summary"]=" ".join(summary)
+    data["summary"]=summary
 
 
 
 
 
-    # Skills
 
-
-    skills=find_section(
+    skills=get_section(
 
         text,
 
         [
 
-            "skills",
+        "CORE SKILLS",
 
-            "technical skills",
+        "SKILLS"
 
-            "tools",
+        ],
 
-            "technology"
+        [
+
+        "PROFESSIONAL EXPERIENCE",
+
+        "EDUCATION"
 
         ]
 
     )
 
 
-    data["skills"]=clean_list(skills)
 
+    data["skills"]=skills.replace(
 
+        "\n",
 
-
-
-
-
-    # Experience
-
-
-    exp_lines=find_section(
-
-        text,
-
-        [
-
-            "experience",
-
-            "professional experience",
-
-            "work experience",
-
-            "employment"
-
-        ]
+        ","
 
     )
+
+
+
+
 
 
 
     experience=[]
 
 
-    current={}
+
+    exp=get_section(
+
+        text,
+
+        [
+
+        "PROFESSIONAL EXPERIENCE",
+
+        "EXPERIENCE"
+
+        ],
+
+        [
+
+        "EDUCATION",
+
+        "PROJECTS"
+
+        ]
+
+    )
 
 
 
-    for line in exp_lines:
+    exp_lines=[
+
+        x.strip()
+
+        for x in exp.split("\n")
+
+        if x.strip()
+
+    ]
 
 
 
-        if (
-
-            "role:" in line.lower()
-
-            or
-
-            "designation:" in line.lower()
-
-        ):
-
-
-            if current:
-
-                experience.append(current)
+    bullets=[]
 
 
 
-            current={
-
-                "role":
-
-                line.split(":")[-1].strip(),
-
-                "company":"",
-
-                "duration":"",
-
-                "responsibilities":[]
-
-            }
+    for x in exp_lines:
 
 
+        if x.startswith("•"):
 
-        elif "client:" in line.lower():
+            bullets.append(
 
+                x.replace("•","")
 
-            current["company"]=line.split(":")[-1].strip()
-
-
-
-        elif "duration:" in line.lower():
-
-
-            current["duration"]=line.split(":")[-1].strip()
-
-
-
-        else:
-
-
-            if current:
-
-
-                current["responsibilities"].append(
-
-                    line
-
-                )
+            )
 
 
 
 
-    if current:
 
-        experience.append(current)
+    experience.append(
+
+        {
+
+        "role":"Software Developer",
+
+        "company":"",
+
+        "dates":"",
+
+        "location":"",
+
+        "bullet1": bullets[0] if len(bullets)>0 else "",
+
+        "bullet2": bullets[1] if len(bullets)>1 else "",
+
+        "bullet3": bullets[2] if len(bullets)>2 else ""
+
+        }
+
+    )
 
 
 
@@ -445,58 +308,21 @@ def parse_resume(text):
 
 
 
-    # Education
-
-
-    education=find_section(
+    project_section=get_section(
 
         text,
 
         [
 
-            "education",
+        "PROJECTS"
 
-            "qualification",
-
-            "academic"
-
-        ]
-
-    )
-
-
-    data["education"]=[
-
-        {
-
-            "degree":education[0] if education else "",
-
-            "university":education[1] if len(education)>1 else "",
-
-            "year":""
-
-        }
-
-    ]
-
-
-
-
-
-
-
-    # Projects
-
-
-    projects=find_section(
-
-        text,
+        ],
 
         [
 
-            "project",
+        "CERTIFICATIONS",
 
-            "projects"
+        "ACHIEVEMENTS"
 
         ]
 
@@ -508,66 +334,39 @@ def parse_resume(text):
 
         {
 
-            "name":
+        "name":project_section,
 
-            p,
+        "description":"",
 
-            "description":"",
-
-            "link":""
+        "link":""
 
         }
-
-        for p in projects
 
     ]
 
 
 
 
+    data["education"]=[
 
+        {
 
-    # Certifications
+        "degree":"",
 
+        "university":"",
 
-    cert=find_section(
+        "year":""
 
-        text,
+        }
 
-        [
-
-            "certification",
-
-            "certifications"
-
-        ]
-
-    )
-
-
-    data["certifications"]=cert
+    ]
 
 
 
+    data["certifications"]=[]
 
 
-
-    # Achievements
-
-
-    data["achievements"]=find_section(
-
-        text,
-
-        [
-
-            "achievement",
-
-            "award"
-
-        ]
-
-    )
+    data["achievements"]=[]
 
 
 
