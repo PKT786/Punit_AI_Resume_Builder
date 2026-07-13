@@ -883,19 +883,76 @@ def render_auth_page():
 
 
 def render_logout_control():
-    """Small 'logged in as ...' strip with a logout button. Call this from
-    app.py once the person is past the login gate, wherever you'd like it
-    to show up (e.g. right under the hero section)."""
+    """
+    Floats 'Punit Kumar Trivedi   [Log out]' in the top-right corner of the
+    app, near where Streamlit's own Share/star/edit icons sit, instead of
+    a plain caption line under the hero.
+
+    Implementation note: Streamlit doesn't let us inject anything into its
+    own native toolbar (that's fixed browser chrome, not part of the app's
+    DOM), so this uses a CSS `:has()` selector to find the specific
+    container we render and pin *that* to the top-right corner instead.
+    `:has()` is supported in all modern browsers (Chrome/Edge/Safari for a
+    couple of years now, Firefox since early 2024); if someone's on an
+    older browser, this block just falls back to its normal in-page
+    position instead of floating — not broken, just not floating.
+    """
     user = st.session_state.get("auth_user")
     if not user:
         return
-    c1, c2 = st.columns([5, 1])
-    with c1:
-        st.caption(f"Logged in as **{user['name']}** ({user['email']})")
-    with c2:
-        if st.button("Log out", key="auth_logout_btn"):
-            st.session_state.pop("auth_user", None)
-            st.rerun()
+
+    st.markdown(
+        f"""
+        <style>
+        div[data-testid="stVerticalBlock"]:has(#logout-marker) {{
+            position: fixed !important;
+            top: 3.2rem;
+            right: 1.5rem;
+            z-index: 999999;
+            width: auto !important;
+            background: {PAPER_2};
+            border: 1px solid rgba(18,32,61,0.14);
+            border-radius: 999px;
+            padding: 6px 10px 6px 18px !important;
+            box-shadow: 0 8px 20px rgba(18,32,61,0.18);
+        }}
+        div[data-testid="stVerticalBlock"]:has(#logout-marker) [data-testid="stHorizontalBlock"] {{
+            align-items: center !important;
+            gap: 4px;
+        }}
+        .logout-name {{
+            font-family: 'Lora', serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: {INK_TEXT};
+            white-space: nowrap;
+            padding-top: 6px;
+        }}
+        div[data-testid="stVerticalBlock"]:has(#logout-marker) div[data-testid="stButton"] button {{
+            padding: 3px 14px;
+            font-size: 12px;
+        }}
+        @media (max-width: 900px) {{
+            div[data-testid="stVerticalBlock"]:has(#logout-marker) {{
+                position: static !important;
+                width: 100% !important;
+                margin-bottom: 14px;
+            }}
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    with st.container():
+        st.markdown('<span id="logout-marker"></span>', unsafe_allow_html=True)
+        name_col, btn_col = st.columns([3, 1])
+        with name_col:
+            st.markdown(f'<div class="logout-name">{user["name"]}</div>', unsafe_allow_html=True)
+        with btn_col:
+            if st.button("Log out", key="auth_logout_btn"):
+                st.session_state.pop("auth_user", None)
+                st.rerun()
 
 
 def require_login() -> bool:
@@ -909,3 +966,4 @@ def require_login() -> bool:
         return True
     render_auth_page()
     return False
+
