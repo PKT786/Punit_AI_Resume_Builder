@@ -233,10 +233,10 @@ def render_hero():
             background:
                 radial-gradient(circle at 85% 15%, rgba(196,155,74,0.16) 0%, transparent 45%),
                 linear-gradient(135deg, {NAVY_2} 0%, {NAVY} 55%, {INK} 100%);
-            border-radius: 22px;
-            padding: 34px 40px;
-            margin-bottom: 30px;
-            box-shadow: 0 16px 40px rgba(11,15,26,0.35);
+            border-radius: 26px;
+            padding: 56px 64px;
+            margin-bottom: 34px;
+            box-shadow: 0 20px 48px rgba(11,15,26,0.35);
             overflow: hidden;
         }}
         .hero-wrap::before {{
@@ -244,8 +244,8 @@ def render_hero():
             position: absolute;
             top: -40%;
             right: -10%;
-            width: 380px;
-            height: 380px;
+            width: 460px;
+            height: 460px;
             border-radius: 50%;
             border: 1px solid rgba(196,155,74,0.25);
         }}
@@ -254,50 +254,51 @@ def render_hero():
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 28px;
+            gap: 36px;
             flex-wrap: wrap;
         }}
         .hero-logo img {{
-            width: 74px;
-            height: 74px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+            box-shadow: 0 8px 22px rgba(0,0,0,0.45);
         }}
         .hero-text {{
             flex: 1;
-            min-width: 240px;
+            min-width: 280px;
             text-align: center;
         }}
         .hero-eyebrow {{
             color: {BRASS_LIGHT};
             font-family: 'Poppins', sans-serif;
-            font-size: 11.5px;
+            font-size: 13px;
             font-weight: 600;
-            letter-spacing: 3px;
+            letter-spacing: 3.5px;
             text-transform: uppercase;
-            margin-bottom: 6px;
+            margin-bottom: 10px;
         }}
         .hero-title {{
             color: #FFFFFF;
-            font-size: 34px;
+            font-size: 48px;
             font-weight: 700;
             letter-spacing: 0.3px;
             margin: 0;
             font-family: 'Lora', serif;
+            line-height: 1.15;
         }}
         .hero-sub {{
             color: #C7CEDB;
-            font-size: 13.5px;
-            margin-top: 12px;
-            max-width: 460px;
+            font-size: 16px;
+            margin-top: 16px;
+            max-width: 580px;
             margin-left: auto;
             margin-right: auto;
-            line-height: 1.55;
+            line-height: 1.6;
         }}
         .hero-image img {{
-            width: 210px;
-            border-radius: 16px;
-            box-shadow: 0 14px 32px rgba(0,0,0,0.5);
+            width: 280px;
+            border-radius: 18px;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.5);
         }}
         @media (max-width: 700px) {{
             .hero-row {{ flex-direction: column; text-align: center; }}
@@ -485,16 +486,16 @@ st.subheader("III. Your Details")
 st.markdown("**Contact Details**")
 c1, c2 = st.columns(2)
 with c1:
-    st.session_state["name"] = st.text_input("Full Name", st.session_state["name"])
-    st.session_state["location"] = st.text_input("Location (City, State/Country)", st.session_state["location"])
-    st.session_state["email"] = st.text_input("Email", st.session_state["email"])
+    st.session_state["name"] = st.text_input("Full Name", st.session_state["name"], key=_vk("contact_name"))
+    st.session_state["location"] = st.text_input("Location (City, State/Country)", st.session_state["location"], key=_vk("contact_location"))
+    st.session_state["email"] = st.text_input("Email", st.session_state["email"], key=_vk("contact_email"))
 with c2:
-    st.session_state["title"] = st.text_input("Headline / Target Job Title", st.session_state["title"])
-    st.session_state["phone"] = st.text_input("Phone", st.session_state["phone"])
-    st.session_state["linkedin"] = st.text_input("LinkedIn URL (optional)", st.session_state["linkedin"])
+    st.session_state["title"] = st.text_input("Headline / Target Job Title", st.session_state["title"], key=_vk("contact_title"))
+    st.session_state["phone"] = st.text_input("Phone", st.session_state["phone"], key=_vk("contact_phone"))
+    st.session_state["linkedin"] = st.text_input("LinkedIn URL (optional)", st.session_state["linkedin"], key=_vk("contact_linkedin"))
 
 st.markdown("**Professional Summary**")
-st.session_state["summary"] = st.text_area("Summary", st.session_state["summary"], height=120, label_visibility="collapsed")
+st.session_state["summary"] = st.text_area("Summary", st.session_state["summary"], height=120, label_visibility="collapsed", key=_vk("contact_summary"))
 
 st.markdown("**Technical / Core Skills**")
 for i, s in enumerate(st.session_state["skills"]):
@@ -746,3 +747,4 @@ if st.session_state.get("generated_docx"):
                 "start each bullet with an action verb, and make sure every section above has content — "
                 "these are the biggest score drivers."
             )
+
