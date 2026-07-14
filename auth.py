@@ -811,7 +811,7 @@ def _login_form():
 
 
 def _signup_form():
-    with st.form("signup_form"):
+    with st.form("signup_form", clear_on_submit=True):
         name = st.text_input("Full Name")
         email = st.text_input("Email (this will be your user id)")
         mobile = st.text_input("Mobile Number")
@@ -843,11 +843,15 @@ def _signup_form():
             )
             return
 
+        # Create the account and store it — but don't log the person in
+        # automatically. They confirm their credentials work by logging in
+        # with them, same as any normal signup flow.
         user = create_user(name=name, email=email, mobile=mobile, password=password, provider="password")
         notify_admin("New signup", user)
-        st.success("Account created! You're now logged in.")
-        st.session_state["auth_user"] = _public_user(user)
-        st.rerun()
+        st.success(
+            f"✅ Signed up successfully, **{user['name']}**! "
+            "Use your email and password in the **Log In** tab to continue."
+        )
 
     _oauth_buttons()
 
@@ -885,17 +889,20 @@ def render_auth_page():
 def render_logout_control():
     """
     Floats 'Punit Kumar Trivedi   [Log out]' in the top-right corner of the
-    app, near where Streamlit's own Share/star/edit icons sit, instead of
-    a plain caption line under the hero.
+    app, near where Streamlit's own Share/star/edit icons sit.
 
-    Implementation note: Streamlit doesn't let us inject anything into its
-    own native toolbar (that's fixed browser chrome, not part of the app's
-    DOM), so this uses a CSS `:has()` selector to find the specific
-    container we render and pin *that* to the top-right corner instead.
-    `:has()` is supported in all modern browsers (Chrome/Edge/Safari for a
-    couple of years now, Firefox since early 2024); if someone's on an
-    older browser, this block just falls back to its normal in-page
-    position instead of floating — not broken, just not floating.
+    Previous implementation used a CSS `:has()` selector to find and pin a
+    specific Streamlit-rendered container. That was unsafe: `:has()` matches
+    every ANCESTOR block that contains the marker, not just the small one
+    intended — which included the single root block wrapping the entire
+    page. Pinning that root block to `position: fixed` collapsed the whole
+    page's layout, which is what caused scrolling to freeze after login.
+
+    Fix: this is now a single self-contained, pure HTML/CSS floating
+    element (no Streamlit widget inside it, so no ambiguous container to
+    target). "Log out" is a plain link to `?logout=1`; `require_login()`
+    below checks for that query param and performs the actual logout in
+    Python before anything else renders.
     """
     user = st.session_state.get("auth_user")
     if not user:
@@ -904,55 +911,58 @@ def render_logout_control():
     st.markdown(
         f"""
         <style>
-        div[data-testid="stVerticalBlock"]:has(#logout-marker) {{
-            position: fixed !important;
+        .logout-float {{
+            position: fixed;
             top: 3.2rem;
             right: 1.5rem;
             z-index: 999999;
-            width: auto !important;
+            display: flex;
+            align-items: center;
+            gap: 12px;
             background: {PAPER_2};
             border: 1px solid rgba(18,32,61,0.14);
             border-radius: 999px;
-            padding: 6px 10px 6px 18px !important;
+            padding: 7px 8px 7px 18px;
             box-shadow: 0 8px 20px rgba(18,32,61,0.18);
         }}
-        div[data-testid="stVerticalBlock"]:has(#logout-marker) [data-testid="stHorizontalBlock"] {{
-            align-items: center !important;
-            gap: 4px;
-        }}
-        .logout-name {{
+        .logout-float .logout-name {{
             font-family: 'Lora', serif;
             font-size: 13px;
             font-weight: 600;
             color: {INK_TEXT};
             white-space: nowrap;
-            padding-top: 6px;
         }}
-        div[data-testid="stVerticalBlock"]:has(#logout-marker) div[data-testid="stButton"] button {{
-            padding: 3px 14px;
+        .logout-float a.logout-btn {{
+            font-family: 'Poppins', sans-serif;
             font-size: 12px;
+            font-weight: 600;
+            color: {NAVY};
+            background: {PAPER};
+            border: 1px solid rgba(18,32,61,0.15);
+            border-radius: 999px;
+            padding: 5px 14px;
+            text-decoration: none;
+            white-space: nowrap;
+        }}
+        .logout-float a.logout-btn:hover {{
+            border-color: {BRASS};
+            color: {INK};
         }}
         @media (max-width: 900px) {{
-            div[data-testid="stVerticalBlock"]:has(#logout-marker) {{
-                position: static !important;
-                width: 100% !important;
-                margin-bottom: 14px;
+            .logout-float {{
+                position: static;
+                width: fit-content;
+                margin: 0 0 14px auto;
             }}
         }}
         </style>
+        <div class="logout-float">
+          <span class="logout-name">{user['name']}</span>
+          <a class="logout-btn" href="?logout=1" target="_self">Log out</a>
+        </div>
         """,
         unsafe_allow_html=True,
     )
-
-    with st.container():
-        st.markdown('<span id="logout-marker"></span>', unsafe_allow_html=True)
-        name_col, btn_col = st.columns([3, 1])
-        with name_col:
-            st.markdown(f'<div class="logout-name">{user["name"]}</div>', unsafe_allow_html=True)
-        with btn_col:
-            if st.button("Log out", key="auth_logout_btn"):
-                st.session_state.pop("auth_user", None)
-                st.rerun()
 
 
 def require_login() -> bool:
@@ -961,6 +971,11 @@ def require_login() -> bool:
     logged in (safe to continue rendering the app); otherwise renders the
     login/signup page and returns False (caller should st.stop()).
     """
+    if st.query_params.get("logout"):
+        st.session_state.pop("auth_user", None)
+        st.query_params.clear()
+        st.rerun()
+
     _handle_oauth_redirect()
     if st.session_state.get("auth_user"):
         return True
